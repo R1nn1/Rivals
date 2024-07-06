@@ -1,12 +1,296 @@
+local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/DrRay-UI-Library/main/DrRay.lua"))()
 
+local window = DrRayLibrary:Load("Rinns Hub", "Default")
 
-local NotificationHolder = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Module.Lua"))()
-local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Client.Lua"))()
+local tab = DrRayLibrary.newTab("Main Tab", "ImageIdHere")
 
-Notification:Notify(
-    {Title = "IMPORTANT", Description = "This script has not been made and will be made and fully updated tomorrow"},
-    {OutlineColor = Color3.fromRGB(80, 80, 80),Time = 10, Type = "option"},
-    {Image = "http://www.roblox.com/asset/?id=6023426923", ImageColor = Color3.fromRGB(255, 84, 84), Callback = function(State) print(tostring(State)) end}
-)
+local aimbotEnabled = false
+local wallCheckEnabled = false
+local aimbotFov = 100 -- default FOV value
+local lockOnRange = 3000 -- default lock-on range
+local fovCircle
+local triggerBotEnabled = false
+local triggerBotFov = 25 -- default Trigger Bot FOV value
+local triggerBotWallCheck = false
+local triggerBotCircle
+local players = game:GetService("Players")
+local camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local activeTouch = nil
+local mouse1press = mouse1press or function() end
+local mouse1release = mouse1release or function() end
+local triggerBotConnection
 
+local function isMobile()
+    return UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+end
 
+local function createFovCircle()
+    if fovCircle then
+        fovCircle:Remove()
+    end
+    fovCircle = Drawing.new("Circle")
+    fovCircle.Thickness = 2
+    fovCircle.NumSides = 64
+    fovCircle.Radius = aimbotFov
+    fovCircle.Color = Color3.new(1, 1, 1)
+    fovCircle.Transparency = 0.4
+    fovCircle.Visible = aimbotEnabled
+end
+
+local function updateFovCircle()
+    if fovCircle then
+        fovCircle.Position = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+        fovCircle.Radius = aimbotFov
+        fovCircle.Visible = aimbotEnabled
+    end
+end
+
+local function createTriggerBotCircle()
+    if triggerBotCircle then
+        triggerBotCircle:Remove()
+    end
+    triggerBotCircle = Drawing.new("Circle")
+    triggerBotCircle.Thickness = 2
+    triggerBotCircle.NumSides = 64
+    triggerBotCircle.Radius = triggerBotFov
+    triggerBotCircle.Color = Color3.new(1, 1, 0) -- Yellow color
+    triggerBotCircle.Transparency = 0.4
+    triggerBotCircle.Visible = triggerBotEnabled
+end
+
+local function updateTriggerBotCircle()
+    if triggerBotCircle then
+        triggerBotCircle.Position = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+        triggerBotCircle.Radius = triggerBotFov
+        triggerBotCircle.Visible = triggerBotEnabled
+    end
+end
+
+local function isPlayerVisible(target)
+    local origin = camera.CFrame.Position
+    local _, onScreen = camera:WorldToScreenPoint(target.Position)
+    if not onScreen then
+        return false
+    end
+    
+    local ray = Ray.new(origin, (target.Position - origin).unit * lockOnRange)
+    local part, hitPosition = workspace:FindPartOnRayWithIgnoreList(ray, {camera, players.LocalPlayer.Character})
+    if part and part:IsDescendantOf(target.Parent) then
+        return true
+    end
+    
+    return false
+end
+
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local lowestHealth = math.huge
+    local playersInCircle = {}
+    
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            local humanoid = player.Character.Humanoid
+            
+            if humanoid.Health > 0 then -- Check if the player is alive
+                local screenPoint = camera:WorldToScreenPoint(hrp.Position)
+                local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)).Magnitude
+                
+                if distanceFromCenter <= aimbotFov and (not wallCheckEnabled or isPlayerVisible(hrp)) then
+                    table.insert(playersInCircle, player)
+                end
+            end
+        end
+    end
+    
+    for _, player in pairs(playersInCircle) do
+        if player.Character.Humanoid.Health < lowestHealth then
+            lowestHealth = player.Character.Humanoid.Health
+            closestPlayer = player
+        end
+    end
+    
+    return closestPlayer
+end
+
+tab.newToggle("Aimbot", "Makes an FOV when an enemy enters that FOV it will lock on to them", true, function(toggleState)
+    aimbotEnabled = toggleState
+    createFovCircle()
+end)
+
+tab.newToggle("Wall Check", "Checks if the player is behind a wall and won't lock on to them", true, function(toggleState)
+    wallCheckEnabled = toggleState
+end)
+
+tab.newSlider("Aimbot FOV Changer", "Lets you change how big the FOV of the aimbot is", 1000, false, function(num)
+    aimbotFov = num
+    updateFovCircle()
+end)
+
+tab.newSlider("Lock-On Range Changer", "Lets you change the range of the aimbot lock-on", 5000, false, function(num)
+    lockOnRange = num
+end)
+
+tab.newToggle("Trigger Bot", "Automatically triggers when an enemy enters the circle", true, function(toggleState)
+    triggerBotEnabled = toggleState
+    createTriggerBotCircle()
+
+    if triggerBotConnection then
+        triggerBotConnection:Disconnect()
+    end
+
+    if toggleState then
+        if isMobile() then
+            triggerBotConnection = game:GetService("RunService").RenderStepped:Connect(function()
+                local player = game:GetService("Players").LocalPlayer
+                for _, targetPlayer in pairs(players:GetPlayers()) do
+                    if targetPlayer ~= player and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local humanoid = targetPlayer.Character.Humanoid
+                        if humanoid.Health > 0 then
+                            local screenPoint = camera:WorldToScreenPoint(targetPlayer.Character.HumanoidRootPart.Position)
+                            local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)).Magnitude
+                            if distanceFromCenter <= triggerBotFov and (not triggerBotWallCheck or isPlayerVisible(targetPlayer.Character.HumanoidRootPart)) then
+                                activeTouch = activeTouch or game:GetService("VirtualUser"):CaptureController()
+                                game:GetService("VirtualUser"):ClickButton2(Vector2.new(screenPoint.X, screenPoint.Y))
+                                wait(0.12)
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            triggerBotConnection = game:GetService("RunService").RenderStepped:Connect(function()
+                local player = game:GetService("Players").LocalPlayer
+                local mouse = player:GetMouse()
+                if mouse.Target and mouse.Target.Parent:FindFirstChild("Humanoid") and mouse.Target.Parent.Name ~= player.Name then
+                    mouse1press()
+                    wait(0.12)
+                    mouse1release()
+                end
+            end)
+        end
+    end
+end)
+
+tab.newSlider("Trigger Bot FOV Changer", "Lets you change the size of the Trigger Bot circle", 50, false, function(num)
+    triggerBotFov = num
+    updateTriggerBotCircle()
+end)
+
+tab.newToggle("Trigger Bot Wall Check", "Checks if the player is behind a wall and won't trigger on them", true, function(toggleState)
+    triggerBotWallCheck = toggleState
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    updateFovCircle()
+    updateTriggerBotCircle()
+    
+    if aimbotEnabled then
+        local closestPlayer = getClosestPlayer()
+        if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            camera.CFrame = CFrame.new(camera.CFrame.Position, closestPlayer.Character.HumanoidRootPart.Position)
+        end
+    end
+end)
+
+tab.newToggle("Auto Vote Map", "Votes a map for you when you're in a match", true, function(toggleState)
+    autoVoteEnabled = toggleState
+
+    if autoVoteEnabled then
+        spawn(function()
+            while autoVoteEnabled do
+                local maps = {"Arena", "Backrooms", "Docks", "Onyx", "Construction", "Station", "Crossroads"}
+                local map = maps[math.random(1, #maps)]
+                game:GetService("ReplicatedStorage").Remotes.Duels.VoteMap:FireServer(map)
+                wait(0.15)
+            end
+        end)
+    end
+end)
+
+local miscTab = DrRayLibrary.newTab("Misc Tab", "ImageIdHere")
+local playersTab = DrRayLibrary.newTab("Players Tab", "ImageIdHere")
+
+-- FE Mobile Fly By Fedoratum#6195
+
+local plr = game:GetService("Players")
+local Lp = plr.LocalPlayer
+local rs = game:GetService("RunService")
+
+local controlModule = require(Lp.PlayerScripts:WaitForChild('PlayerModule'):WaitForChild("ControlModule"))
+
+local bv = Instance.new("BodyVelocity")
+bv.Name = "VelocityHandler"
+bv.Parent = Lp.Character.HumanoidRootPart
+bv.MaxForce = Vector3.new(0, 0, 0)
+bv.Velocity = Vector3.new(0, 0, 0)
+
+local bg = Instance.new("BodyGyro")
+bg.Name = "GyroHandler"
+bg.Parent = Lp.Character.HumanoidRootPart
+bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+bg.P = 1000
+bg.D = 50
+
+Lp.CharacterAdded:Connect(function(NewChar)
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "VelocityHandler"
+    bv.Parent = NewChar:WaitForChild("HumanoidRootPart")
+    bv.MaxForce = Vector3.new(0, 0, 0)
+    bv.Velocity = Vector3.new(0, 0, 0)
+
+    local bg = Instance.new("BodyGyro")
+    bg.Name = "GyroHandler"
+    bg.Parent = NewChar:WaitForChild("HumanoidRootPart")
+    bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.P = 1000
+    bg.D = 50
+end)
+
+local speed = 50
+local buttonIsOn = false
+
+rs.RenderStepped:Connect(function()
+    if Lp.Character and Lp.Character:FindFirstChildOfClass("Humanoid") and Lp.Character.HumanoidRootPart and Lp.Character.HumanoidRootPart:FindFirstChild("VelocityHandler") and Lp.Character.HumanoidRootPart:FindFirstChild("GyroHandler") then
+        if buttonIsOn then
+            Lp.Character.HumanoidRootPart.VelocityHandler.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            Lp.Character.HumanoidRootPart.GyroHandler.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            Lp.Character.Humanoid.PlatformStand = true
+        else
+            Lp.Character.HumanoidRootPart.VelocityHandler.MaxForce = Vector3.new(0, 0, 0)
+            Lp.Character.HumanoidRootPart.GyroHandler.MaxTorque = Vector3.new(0, 0, 0)
+            Lp.Character.Humanoid.PlatformStand = false
+            return
+        end
+
+        Lp.Character.HumanoidRootPart.GyroHandler.CFrame = camera.CFrame
+        local direction = controlModule:GetMoveVector()
+        Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Vector3.new()
+        if direction.X > 0 then
+            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity + camera.CFrame.RightVector * (direction.X * speed)
+        end
+        if direction.X < 0 then
+            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity + camera.CFrame.RightVector * (direction.X * speed)
+        end
+        if direction.Z > 0 then
+            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity - camera.CFrame.LookVector * (direction.Z * speed)
+        end
+        if direction.Z < 0 then
+            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity - camera.CFrame.LookVector * (direction.Z * speed)
+        end
+    end
+end)
+
+playersTab.newToggle("Fly", "Lets you fly", true, function(toggleState)
+    buttonIsOn = toggleState
+    if toggleState then
+        print("On")
+    else
+        print("Off")
+    end
+end)
+
+playersTab.newSlider("Fly Speed", "Change the speed of flying", 5000, false, function(num)
+    speed = num
+end)
