@@ -19,7 +19,6 @@ local UserInputService = game:GetService("UserInputService")
 local activeTouch = nil
 local mouse1press = mouse1press or function() end
 local mouse1release = mouse1release or function() end
-local triggerBotConnection
 
 local function isMobile()
     return UserInputService.TouchEnabled and not UserInputService.MouseEnabled
@@ -128,49 +127,13 @@ tab.newSlider("Aimbot FOV Changer", "Lets you change how big the FOV of the aimb
     updateFovCircle()
 end)
 
-tab.newSlider("Lock-On Range Changer", "Lets you change the range of the aimbot", 5000, false, function(num)
+tab.newSlider("Lock-On Range Changer", "Lets you change the range of the aimbot lock-on", 5000, false, function(num)
     lockOnRange = num
 end)
 
-tab.newToggle("Trigger Bot", "Automatically fires for you when an enemy enters the circle doesn't support mobile that much", true, function(toggleState)
+tab.newToggle("Trigger Bot", "Automatically fires when an enemy enters the circle", true, function(toggleState)
     triggerBotEnabled = toggleState
     createTriggerBotCircle()
-
-    if triggerBotConnection then
-        triggerBotConnection:Disconnect()
-    end
-
-    if toggleState then
-        if isMobile() then
-            triggerBotConnection = game:GetService("RunService").RenderStepped:Connect(function()
-                local player = game:GetService("Players").LocalPlayer
-                for _, targetPlayer in pairs(players:GetPlayers()) do
-                    if targetPlayer ~= player and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        local humanoid = targetPlayer.Character.Humanoid
-                        if humanoid.Health > 0 then
-                            local screenPoint = camera:WorldToScreenPoint(targetPlayer.Character.HumanoidRootPart.Position)
-                            local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)).Magnitude
-                            if distanceFromCenter <= triggerBotFov and (not triggerBotWallCheck or isPlayerVisible(targetPlayer.Character.HumanoidRootPart)) then
-                                activeTouch = activeTouch or game:GetService("VirtualUser"):CaptureController()
-                                game:GetService("VirtualUser"):ClickButton2(Vector2.new(screenPoint.X, screenPoint.Y))
-                                wait(0.1)
-                            end
-                        end
-                    end
-                end
-            end)
-        else
-            triggerBotConnection = game:GetService("RunService").RenderStepped:Connect(function()
-                local player = game:GetService("Players").LocalPlayer
-                local mouse = player:GetMouse()
-                if mouse.Target and mouse.Target.Parent:FindFirstChild("Humanoid") and mouse.Target.Parent.Name ~= player.Name then
-                    mouse1press()
-                    wait(0.12)
-                    mouse1release()
-                end
-            end)
-        end
-    end
 end)
 
 tab.newSlider("Trigger Bot FOV Changer", "Lets you change the size of the Trigger Bot circle", 50, false, function(num)
@@ -190,6 +153,24 @@ game:GetService("RunService").RenderStepped:Connect(function()
         local closestPlayer = getClosestPlayer()
         if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
             camera.CFrame = CFrame.new(camera.CFrame.Position, closestPlayer.Character.HumanoidRootPart.Position)
+        end
+    end
+
+    if triggerBotEnabled then
+        local player = game:GetService("Players").LocalPlayer
+        for _, targetPlayer in pairs(players:GetPlayers()) do
+            if targetPlayer ~= player and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local humanoid = targetPlayer.Character.Humanoid
+                if humanoid.Health > 0 then
+                    local screenPoint = camera:WorldToScreenPoint(targetPlayer.Character.HumanoidRootPart.Position)
+                    local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)).Magnitude
+                    if distanceFromCenter <= triggerBotFov and (not triggerBotWallCheck or isPlayerVisible(targetPlayer.Character.HumanoidRootPart)) then
+                        mouse1press()
+                        wait()
+                        mouse1release()
+                    end
+                end
+            end
         end
     end
 end)
@@ -294,16 +275,3 @@ end)
 playersTab.newSlider("Fly Speed", "Change the speed of flying", 5000, false, function(num)
     speed = num
 end)
-
-
-local NotificationHolder = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Module.Lua"))()
-local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Client.Lua"))()
-
-Notification:Notify(
-    {Title = "IMPORTANT", Description = "If any of the toggles are already on turn it off and turn it back on again black = off green = on"},
-    {OutlineColor = Color3.fromRGB(80, 80, 80),Time = 10, Type = "option"},
-    {Image = "http://www.roblox.com/asset/?id=6023426923", ImageColor = Color3.fromRGB(255, 84, 84), Callback = function(State) print(tostring(State)) end}
-)
-
-
-
