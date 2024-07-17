@@ -278,7 +278,7 @@ local function getColorFromName(colorName)
 end
 
 Tab:AddDropdown({
-    Name = "FOV Circle Color",
+    Name = "Aimbot Fov Circle Color",
     Default = "White",
     Options = colorOptions,
     Callback = function(Value)
@@ -308,14 +308,6 @@ game:GetService("RunService").RenderStepped:Connect(function()
         end
     end
 end)
-local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
-
-local Window = OrionLib:MakeWindow({
-    Name = "ESP and Teleport Library",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "OrionTest"
-})
 
 local ESP_Tab = Window:MakeTab({
     Name = "ESP Settings",
