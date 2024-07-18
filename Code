@@ -195,6 +195,7 @@ Tab:AddToggle({
 
         if autoFarmEnabled then
             aimbotEnabled = true
+            wallCheckEnabled = true
             aimbotFov = 300
             createFovCircle()
 
@@ -222,7 +223,7 @@ Tab:AddToggle({
                             wait(0.01)
                         end
 
-                        wait(4.5)
+                        wait(5)
                     else
                         wait(0.5)
                     end
@@ -230,6 +231,7 @@ Tab:AddToggle({
             end)
         else
             aimbotEnabled = false
+            wallCheckEnabled = false
             updateFovCircle()
         end
     end    
