@@ -255,6 +255,274 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+local ESP_Tab = Window:MakeTab({
+    Name = "ESP Settings",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local ESP_Section = ESP_Tab:AddSection({
+    Name = "ESP Toggles"
+})
+
+-- ESP Settings
+local settings = {
+    defaultcolor = Color3.fromRGB(0, 0, 139),  -- Dark Blue
+    teamcheck = false,
+    teamcolor = true,
+    boxESPEnabled = false,
+    tracersEnabled = false,
+    distanceESPEnabled = false,
+    nameESPEnabled = false,
+    boxWidth = 4,  -- Width of the box ESP
+    boxHeight = 6  -- Height of the box ESP
+}
+
+-- Services
+local runService = game:GetService("RunService")
+local players = game:GetService("Players")
+
+-- Variables
+local localPlayer = players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- Functions
+local newVector2, newColor3, newDrawing = Vector2.new, Color3.new, Drawing.new
+local round = function(...) local a = {}; for i, v in next, table.pack(...) do a[i] = math.round(v); end return unpack(a); end
+local wtvp = function(...) local a, b = camera:WorldToViewportPoint(...) return newVector2(a.X, a.Y), b, a.Z end
+
+local espCache = {}
+
+local function createEsp(player)
+    local drawings = {}
+
+    -- Box ESP
+    drawings.boxTop = newDrawing("Line")
+    drawings.boxBottom = newDrawing("Line")
+    drawings.boxLeft = newDrawing("Line")
+    drawings.boxRight = newDrawing("Line")
+    
+    for _, boxPart in ipairs({drawings.boxTop, drawings.boxBottom, drawings.boxLeft, drawings.boxRight}) do
+        boxPart.Thickness = 1
+        boxPart.Color = settings.defaultcolor
+        boxPart.Visible = false
+        boxPart.ZIndex = 2
+    end
+
+    drawings.tracer = newDrawing("Line")
+    drawings.tracer.Thickness = 1
+    drawings.tracer.Color = settings.defaultcolor
+    drawings.tracer.Visible = false
+    drawings.tracer.ZIndex = 1
+
+    drawings.name = newDrawing("Text")
+    drawings.name.Text = player.Name
+    drawings.name.Size = 14
+    drawings.name.Center = true
+    drawings.name.Outline = true
+    drawings.name.Visible = false
+    drawings.name.Color = settings.defaultcolor
+
+    drawings.distance = newDrawing("Text")
+    drawings.distance.Size = 14
+    drawings.distance.Center = true
+    drawings.distance.Outline = true
+    drawings.distance.Visible = false
+    drawings.distance.Color = settings.defaultcolor
+
+    espCache[player] = drawings
+end
+
+local function removeEsp(player)
+    if rawget(espCache, player) then
+        for _, drawing in next, espCache[player] do
+            drawing:Remove()
+        end
+        espCache[player] = nil
+    end
+end
+
+local function updateEsp(player, esp)
+    local character = player and player.Character
+    if character then
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            local rootPos, rootVisible = wtvp(humanoidRootPart.Position)
+            local visible = rootVisible
+
+            local color = settings.teamcolor and player.TeamColor.Color or settings.defaultcolor
+            for _, boxPart in ipairs({esp.boxTop, esp.boxBottom, esp.boxLeft, esp.boxRight}) do
+                boxPart.Color = color
+            end
+            esp.tracer.Color = color
+            esp.name.Color = color
+            esp.distance.Color = color
+
+            for _, boxPart in ipairs({esp.boxTop, esp.boxBottom, esp.boxLeft, esp.boxRight}) do
+                boxPart.Visible = visible and settings.boxESPEnabled
+            end
+            esp.tracer.Visible = settings.tracersEnabled and visible
+            esp.name.Visible = settings.nameESPEnabled and visible
+            esp.distance.Visible = settings.distanceESPEnabled and visible
+
+            if visible then
+                local boxWidth = settings.boxWidth * 10
+                local boxHeight = settings.boxHeight * 10
+                local x, y = round(rootPos.X, rootPos.Y)
+
+                -- Box ESP
+                esp.boxTop.From = newVector2(x - boxWidth / 2, y - boxHeight / 2)
+                esp.boxTop.To = newVector2(x + boxWidth / 2, y - boxHeight / 2)
+
+                esp.boxBottom.From = newVector2(x - boxWidth / 2, y + boxHeight / 2)
+                esp.boxBottom.To = newVector2(x + boxWidth / 2, y + boxHeight / 2)
+
+                esp.boxLeft.From = newVector2(x - boxWidth / 2, y - boxHeight / 2)
+                esp.boxLeft.To = newVector2(x - boxWidth / 2, y + boxHeight / 2)
+
+                esp.boxRight.From = newVector2(x + boxWidth / 2, y - boxHeight / 2)
+                esp.boxRight.To = newVector2(x + boxWidth / 2, y + boxHeight / 2)
+
+                -- Tracer ESP
+                local localHead = localPlayer.Character and localPlayer.Character:FindFirstChild("Head")
+                if localHead then
+                    local localHeadPos = wtvp(localHead.Position)
+                    esp.tracer.From = localHeadPos
+                    esp.tracer.To = rootPos
+                end
+
+                -- Name ESP
+                esp.name.Position = newVector2(x, y - boxHeight / 2 - 16)
+
+                -- Distance ESP
+                local distance = (localPlayer.Character.HumanoidRootPart.Position - character.HumanoidRootPart.Position).Magnitude
+                esp.distance.Text = string.format("%.0f", distance) .. "m"
+                esp.distance.Position = newVector2(x, y + boxHeight / 2 + 16)
+            end
+        end
+    else
+        for _, boxPart in ipairs({esp.boxTop, esp.boxBottom, esp.boxLeft, esp.boxRight}) do
+            boxPart.Visible = false
+        end
+        esp.tracer.Visible = false
+        esp.name.Visible = false
+        esp.distance.Visible = false
+    end
+end
+
+-- Main loop
+for _, player in next, players:GetPlayers() do
+    if player ~= localPlayer then
+        createEsp(player)
+    end
+end
+
+players.PlayerAdded:Connect(function(player)
+    createEsp(player)
+end)
+
+players.PlayerRemoving:Connect(function(player)
+    removeEsp(player)
+end)
+
+runService:BindToRenderStep("esp", Enum.RenderPriority.Camera.Value, function()
+    for player, drawings in next, espCache do
+        if settings.teamcheck and player.Team == localPlayer.Team then
+            continue
+        end
+
+        if drawings and player ~= localPlayer then
+            updateEsp(player, drawings)
+        end
+    end
+end)
+
+-- GUI integration with OrionLib
+ESP_Tab:AddToggle({
+    Name = "Box ESP",
+    Default = false,
+    Callback = function(Value)
+        settings.boxESPEnabled = Value
+    end    
+})
+
+ESP_Tab:AddToggle({
+    Name = "Tracers ESP",
+    Default = false,
+    Callback = function(Value)
+        settings.tracersEnabled = Value
+    end    
+})
+
+ESP_Tab:AddToggle({
+    Name = "Distance ESP",
+    Default = false,
+    Callback = function(Value)
+        settings.distanceESPEnabled = Value
+    end    
+})
+
+ESP_Tab:AddToggle({
+    Name = "Name ESP",
+    Default = false,
+    Callback = function(Value)
+        settings.nameESPEnabled = Value
+    end    
+})
+
+-- Teleport function
+local function teleportPlayer(position)
+    local character = localPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = CFrame.new(position)
+    end
+end
+
+local Misc_Tab = Window:MakeTab({
+    Name = "Misc Settings",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local Misc_Section = Misc_Tab:AddSection({
+    Name = "Teleport Buttons"
+})
+
+Misc_Tab:AddButton({
+    Name = "Teleport to 1v1",
+    Callback = function()
+        teleportPlayer(Vector3.new(-141.97305297851562, -681.7706909179688, 1191.3756103515625))
+    end    
+})
+
+Misc_Tab:AddButton({
+    Name = "Teleport to 2v2",
+    Callback = function()
+        teleportPlayer(Vector3.new(-143.44650268554688, -681.7706909179688, 1222.2271728515625))
+    end    
+})
+
+Misc_Tab:AddButton({
+    Name = "Teleport to 3v3",
+    Callback = function()
+        teleportPlayer(Vector3.new(-142.705322265625, -681.7706909179688, 1252.825439453125))
+    end    
+})
+
+Misc_Tab:AddButton({
+    Name = "Teleport to 4v4",
+    Callback = function()
+        teleportPlayer(Vector3.new(-98.58979797363281, -681.7706909179688, 1291.150390625))
+    end    
+})
+
+Misc_Tab:AddButton({
+    Name = "Teleport to 5v5",
+    Callback = function()
+        teleportPlayer(Vector3.new(-140.42567443847656, -682.2500610351562, 1292.6689453125))
+    end    
+})
+
 local Tab = Window:MakeTab({
     Name = "Players Tab",
     Icon = "rbxassetid://4483345998",
