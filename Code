@@ -256,13 +256,13 @@ RunService.RenderStepped:Connect(function()
 end)
 
 local ESP_Tab = Window:MakeTab({
-    Name = "ESP Settings",
+    Name = "Esp Tab",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
 local ESP_Section = ESP_Tab:AddSection({
-    Name = "ESP Toggles"
+    Name = "ESP Tab"
 })
 
 -- ESP Settings
@@ -439,7 +439,7 @@ end)
 
 -- GUI integration with OrionLib
 ESP_Tab:AddToggle({
-    Name = "Box ESP",
+    Name = "Box Esp",
     Default = false,
     Callback = function(Value)
         settings.boxESPEnabled = Value
@@ -447,7 +447,7 @@ ESP_Tab:AddToggle({
 })
 
 ESP_Tab:AddToggle({
-    Name = "Tracers ESP",
+    Name = "Tracers Esp",
     Default = false,
     Callback = function(Value)
         settings.tracersEnabled = Value
@@ -455,7 +455,7 @@ ESP_Tab:AddToggle({
 })
 
 ESP_Tab:AddToggle({
-    Name = "Distance ESP",
+    Name = "Distance Esp",
     Default = false,
     Callback = function(Value)
         settings.distanceESPEnabled = Value
@@ -463,7 +463,7 @@ ESP_Tab:AddToggle({
 })
 
 ESP_Tab:AddToggle({
-    Name = "Name ESP",
+    Name = "Name Esp",
     Default = false,
     Callback = function(Value)
         settings.nameESPEnabled = Value
@@ -479,13 +479,13 @@ local function teleportPlayer(position)
 end
 
 local Misc_Tab = Window:MakeTab({
-    Name = "Misc Settings",
+    Name = "Misc Tab",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
 local Misc_Section = Misc_Tab:AddSection({
-    Name = "Teleport Buttons"
+    Name = "Misc Tab"
 })
 
 Misc_Tab:AddButton({
