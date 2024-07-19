@@ -255,4 +255,144 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+local Tab = Window:MakeTab({
+    Name = "Players Tab",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local Section = Tab:AddSection({
+    Name = "Players Tab"
+})
+
+local plr = game:GetService("Players")
+local Lp = plr.LocalPlayer
+local rs = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
+
+local controlModule = require(Lp.PlayerScripts:WaitForChild('PlayerModule'):WaitForChild("ControlModule"))
+
+local function createVelocityAndGyro(character)
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "VelocityHandler"
+    bv.Parent = character.HumanoidRootPart
+    bv.MaxForce = Vector3.new(0, 0, 0)
+    bv.Velocity = Vector3.new(0, 0, 0)
+
+    local bg = Instance.new("BodyGyro")
+    bg.Name = "GyroHandler"
+    bg.Parent = character.HumanoidRootPart
+    bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bg.P = 1000
+    bg.D = 50
+end
+
+createVelocityAndGyro(Lp.Character)
+
+Lp.CharacterAdded:Connect(function(NewChar)
+    createVelocityAndGyro(NewChar)
+end)
+
+local speed = 50
+local buttonIsOn = false
+local infJumpEnabled = false
+local noClipEnabled = false
+
+rs.RenderStepped:Connect(function()
+    if Lp.Character and Lp.Character:FindFirstChildOfClass("Humanoid") and Lp.Character.HumanoidRootPart and Lp.Character.HumanoidRootPart:FindFirstChild("VelocityHandler") and Lp.Character.HumanoidRootPart:FindFirstChild("GyroHandler") then
+        if buttonIsOn then
+            Lp.Character.HumanoidRootPart.VelocityHandler.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            Lp.Character.HumanoidRootPart.GyroHandler.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            Lp.Character.Humanoid.PlatformStand = true
+        else
+            Lp.Character.HumanoidRootPart.VelocityHandler.MaxForce = Vector3.new(0, 0, 0)
+            Lp.Character.HumanoidRootPart.GyroHandler.MaxTorque = Vector3.new(0, 0, 0)
+            Lp.Character.Humanoid.PlatformStand = false
+            return
+        end
+
+        Lp.Character.HumanoidRootPart.GyroHandler.CFrame = workspace.CurrentCamera.CFrame
+        local direction = controlModule:GetMoveVector()
+        Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Vector3.new()
+        if direction.X > 0 then
+            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity + workspace.CurrentCamera.CFrame.RightVector * (direction.X * speed)
+        end
+        if direction.X < 0 then
+            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity + workspace.CurrentCamera.CFrame.RightVector * (direction.X * speed)
+        end
+        if direction.Z > 0 then
+            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity - workspace.CurrentCamera.CFrame.LookVector * (direction.Z * speed)
+        end
+        if direction.Z < 0 then
+            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity - workspace.CurrentCamera.CFrame.LookVector * (direction.Z * speed)
+        end
+    end
+
+    if noClipEnabled then
+        for _, v in pairs(Lp.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+Tab:AddToggle({
+    Name = "Fly",
+    Default = false,
+    Callback = function(Value)
+        buttonIsOn = Value
+        if Value then
+            print("Fly Enabled")
+        else
+            print("Fly Disabled")
+        end
+    end
+})
+
+Tab:AddSlider({
+    Name = "Fly Speed",
+    Min = 0,
+    Max = 5000,
+    Default = 50,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Speed",
+    Callback = function(Value)
+        speed = Value
+    end
+})
+
+Tab:AddToggle({
+    Name = "Inf Jump",
+    Default = false,
+    Callback = function(Value)
+        infJumpEnabled = Value
+        if Value then
+            print("Infinite Jump Enabled")
+        else
+            print("Infinite Jump Disabled")
+        end
+    end
+})
+
+uis.JumpRequest:Connect(function()
+    if infJumpEnabled and Lp.Character and Lp.Character:FindFirstChildOfClass("Humanoid") then
+        Lp.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+Tab:AddToggle({
+    Name = "No Clip",
+    Default = false,
+    Callback = function(Value)
+        noClipEnabled = Value
+        if Value then
+            print("No Clip Enabled")
+        else
+            print("No Clip Disabled")
+        end
+    end
+})
+
 OrionLib:Init()
