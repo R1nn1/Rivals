@@ -1,666 +1,402 @@
-local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local ArrayField = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/Refinement/main/MC%3AArrayfield%20Library"))()
 
-local Window = OrionLib:MakeWindow({
-    Name = "Rinns Hub",
-    HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "RinnsHubRivals"
+local Window = ArrayField:CreateWindow({
+    Name = "Rinns Hub Rivals",
+    LoadingTitle = "Rinns Hub Rivals",
+    LoadingSubtitle = "Code By Rinn Ui by Sirius Ui remake by Hosvile",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "RinnsHubConfigs",
+        FileName = "ArrayField"
+    },
+    Discord = {
+        Enabled = true,
+        Invite = "pzZTWgkUgE",
+        RememberJoins = false
+    },
+    KeySystem = false,
+    KeySettings = {
+        Title = "ArrayField",
+        Subtitle = "Key System",
+        Note = "Join the discord (discord.gg/sirius)",
+        FileName = "ArrayFieldsKeys",
+        SaveKey = false,
+        GrabKeyFromSite = false,
+        Key = {"Hello", "Bye"},
+        Actions = {
+            [1] = {
+                Text = 'Click here to copy the key link',
+                OnPress = function() end,
+            }
+        },
+    }
 })
 
-local Tab = Window:MakeTab({
-    Name = "Main Tab",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
+local Tab = Window:CreateTab("Features", 4483362458)
 
 local aimbotEnabled = false
 local wallCheckEnabled = false
 local aimbotFov = 175
 local lockOnRange = 3000
-local fovCircle
+local aimbotSmoothness = 0.1
+local aimbotCircleSize = 175
+local fovCircle = nil
 local aimPart = "Head"
 local fovFollowMouse = false
 local autoFarmEnabled = false
+local espEnabled = false
 local players = game:GetService("Players")
 local camera = workspace.CurrentCamera
 local UserInputService = game:GetService("UserInputService")
-local VirtualUser = game:GetService("VirtualUser")
 local RunService = game:GetService("RunService")
+local wishlistedUsers = {}
+local wishlistFriends = false
 
 local fovCircleColor = Color3.new(1, 1, 1)
+local fovCircleTransparency = 0.4
+local autoFarmTarget = nil
 
 local function createFovCircle()
-    if fovCircle then
-        fovCircle:Remove()
-    end
+    if fovCircle then return end
     fovCircle = Drawing.new("Circle")
     fovCircle.Thickness = 2
     fovCircle.NumSides = 64
     fovCircle.Radius = aimbotFov
     fovCircle.Color = fovCircleColor
-    fovCircle.Transparency = 0.4
+    fovCircle.Transparency = fovCircleTransparency
     fovCircle.Visible = aimbotEnabled
 end
 
 local function updateFovCircle()
     if fovCircle then
         fovCircle.Position = fovFollowMouse and UserInputService:GetMouseLocation() or Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-        fovCircle.Radius = aimbotFov
+        fovCircle.Radius = aimbotCircleSize
         fovCircle.Color = fovCircleColor
+        fovCircle.Transparency = fovCircleTransparency
         fovCircle.Visible = aimbotEnabled
     end
 end
 
-local function isPlayerVisible(target)
-    local origin = camera.CFrame.Position
-    local _, onScreen = camera:WorldToScreenPoint(target.Position)
-    if not onScreen then
-        return false
+createFovCircle()
+
+local function isWallBetween(part)
+    if not wallCheckEnabled then return false end
+    local cameraPos = camera.CFrame.Position
+    local ray = Ray.new(cameraPos, part.Position - cameraPos)
+    local partHit = workspace:FindPartOnRayWithIgnoreList(ray, {camera, part.Parent})
+    return partHit and partHit.Parent ~= part.Parent
+end
+
+local function isUserWishlisted(username)
+    for _, user in pairs(wishlistedUsers) do
+        if string.find(string.lower(username), string.lower(user)) then
+            return true
+        end
     end
-    
-    local ray = Ray.new(origin, (target.Position - origin).unit * lockOnRange)
-    local part, hitPosition = workspace:FindPartOnRayWithIgnoreList(ray, {camera, players.LocalPlayer.Character})
-    if part and part:IsDescendantOf(target.Parent) then
-        return true
-    end
-    
     return false
 end
 
 local function getClosestPlayer()
-    local closestPlayer = nil
-    local shortestDistance = math.huge
-    
+    local closestPlayer, shortestDistance = nil, math.huge
     for _, player in pairs(players:GetPlayers()) do
-        if player ~= players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = player.Character.HumanoidRootPart
-            local humanoid = player.Character.Humanoid
-            
-            if humanoid.Health > 0 then
-                local screenPoint = camera:WorldToScreenPoint(hrp.Position)
-                local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - (fovFollowMouse and UserInputService:GetMouseLocation() or Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2))).Magnitude
-                
-                if distanceFromCenter <= aimbotFov and (not wallCheckEnabled or isPlayerVisible(hrp)) then
-                    local distance = (hrp.Position - players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                    if distance < shortestDistance then
-                        shortestDistance = distance
-                        closestPlayer = player
-                    end
-                end
+        if player ~= players.LocalPlayer and player.Character and player.Character:FindFirstChild(aimPart) and not isUserWishlisted(player.Name) then
+            local part = player.Character[aimPart]
+            local partPos = camera:WorldToViewportPoint(part.Position)
+            local distance = (Vector2.new(partPos.X, partPos.Y) - fovCircle.Position).Magnitude
+            local range = (camera.CFrame.Position - part.Position).Magnitude
+            if distance < aimbotFov and distance < shortestDistance and range < lockOnRange and not isWallBetween(part) then
+                closestPlayer = player
+                shortestDistance = distance
             end
         end
     end
-    
     return closestPlayer
 end
 
-Tab:AddToggle({
-    Name = "Aimbot",
-    Default = false,
-    Callback = function(Value)
-        aimbotEnabled = Value
-        createFovCircle()
-        OrionLib:MakeNotification({
-            Name = "For Aimbot To Work",
-            Content = "Only fire once, don't hold fire and fire again. Spam the fire button basically",
-            Image = "rbxassetid://4483345998",
-            Time = 5
-        })
-    end    
-})
-
-Tab:AddToggle({
-    Name = "Wall Check",
-    Default = false,
-    Callback = function(Value)
-        wallCheckEnabled = Value
-    end    
-})
-
-Tab:AddSlider({
-    Name = "Aimbot Fov Changer",
-    Min = 0,
-    Max = 1000,
-    Default = 175,
-    Color = Color3.fromRGB(255,255,255),
-    Increment = 1,
-    ValueName = "FOV",
-    Callback = function(Value)
-        aimbotFov = Value
-        updateFovCircle()
-    end    
-})
-
-Tab:AddSlider({
-    Name = "Lock-On Range Changer",
-    Min = 0,
-    Max = 5000,
-    Default = 3000,
-    Color = Color3.fromRGB(255,255,255),
-    Increment = 1,
-    ValueName = "Range",
-    Callback = function(Value)
-        lockOnRange = Value
-    end    
-})
-
-Tab:AddDropdown({
-    Name = "Aim Part",
-    Default = "Head",
-    Options = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso", "LeftLeg", "RightLeg"},
-    Callback = function(Value)
-        aimPart = Value
-    end    
-})
-
-Tab:AddToggle({
-    Name = "Fov Follow Mouse",
-    Default = false,
-    Callback = function(Value)
-        fovFollowMouse = Value
-    end    
-})
-
-local colorOptions = {"White", "Red", "Green", "Blue", "Yellow"}
-
-local function getColorFromName(colorName)
-    if colorName == "White" then
-        return Color3.new(1, 1, 1)
-    elseif colorName == "Red" then
-        return Color3.new(1, 0, 0)
-    elseif colorName == "Green" then
-        return Color3.new(0, 1, 0)
-    elseif colorName == "Blue" then
-        return Color3.new(0, 0, 1)
-    elseif colorName == "Yellow" then
-        return Color3.new(1, 1, 0)
+local function aimAtClosestPlayer()
+    local closestPlayer = getClosestPlayer()
+    if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild(aimPart) then
+        local part = closestPlayer.Character[aimPart]
+        camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, part.Position), aimbotSmoothness)
     end
 end
 
-Tab:AddDropdown({
-    Name = "FOV Circle Color",
-    Default = "White",
-    Options = colorOptions,
-    Callback = function(Value)
-        fovCircleColor = getColorFromName(Value)
-        updateFovCircle()
-    end    
-})
-
-Tab:AddToggle({
-    Name = "Win Entire Match",
-    Default = false,
-    Callback = function(Value)
-        autoFarmEnabled = Value
-
-        if autoFarmEnabled then
-            aimbotEnabled = true
-            wallCheckEnabled = true
-            aimbotFov = 300
-            createFovCircle()
-
-            OrionLib:MakeNotification({
-                Name = "Warning",
-                Content = "Only Use This In A Match and Spam the fire button",
-                Image = "rbxassetid://4483345998",
-                Time = 5
-            })
-
-            spawn(function()
-                while autoFarmEnabled do
-                    local closestPlayer = getClosestPlayer()
-                    if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        local targetHRP = closestPlayer.Character.HumanoidRootPart
-                        local radius = 5
-                        local height = 8
-                        local speed = 2 * math.pi / 0.7
-
-                        while closestPlayer.Character and closestPlayer.Character:FindFirstChild("Humanoid") and closestPlayer.Character.Humanoid.Health > 0 and autoFarmEnabled do
-                            local angle = tick() * speed
-                            local offset = Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
-                            players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetHRP.Position + offset)
-                            camera.CFrame = CFrame.new(camera.CFrame.Position, targetHRP.Position)
-                            wait(0.01)
-                        end
-
-                        wait(5)
-                    else
-                        wait(0.5)
-                    end
-                end
-            end)
-        else
-            aimbotEnabled = false
-            wallCheckEnabled = false
-            updateFovCircle()
-        end
-    end    
-})
-
-RunService.RenderStepped:Connect(function()
+local function onRenderStep()
+    if aimbotEnabled then
+        aimAtClosestPlayer()
+    end
     updateFovCircle()
 
-    if aimbotEnabled then
-        local closestPlayer = getClosestPlayer()
-        if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild(aimPart) then
-            local target = closestPlayer.Character[aimPart]
-            camera.CFrame = CFrame.new(camera.CFrame.Position, target.Position)
-        end
-    end
-
     if autoFarmEnabled then
-        -- Simulate clicking at the specified position (x: 610, y: 164)
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton1(Vector2.new(610, 164))
-    end
-end)
-
-local ESP_Tab = Window:MakeTab({
-    Name = "Esp Tab",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local ESP_Section = ESP_Tab:AddSection({
-    Name = "ESP Tab"
-})
-
--- ESP Settings
-local settings = {
-    defaultcolor = Color3.fromRGB(0, 0, 139),  -- Dark Blue
-    teamcheck = false,
-    teamcolor = true,
-    boxESPEnabled = false,
-    tracersEnabled = false,
-    distanceESPEnabled = false,
-    nameESPEnabled = false,
-    boxWidth = 4,  -- Width of the box ESP
-    boxHeight = 6  -- Height of the box ESP
-}
-
--- Services
-local runService = game:GetService("RunService")
-local players = game:GetService("Players")
-
--- Variables
-local localPlayer = players.LocalPlayer
-local camera = workspace.CurrentCamera
-
--- Functions
-local newVector2, newColor3, newDrawing = Vector2.new, Color3.new, Drawing.new
-local round = function(...) local a = {}; for i, v in next, table.pack(...) do a[i] = math.round(v); end return unpack(a); end
-local wtvp = function(...) local a, b = camera:WorldToViewportPoint(...) return newVector2(a.X, a.Y), b, a.Z end
-
-local espCache = {}
-
-local function createEsp(player)
-    local drawings = {}
-
-    -- Box ESP
-    drawings.boxTop = newDrawing("Line")
-    drawings.boxBottom = newDrawing("Line")
-    drawings.boxLeft = newDrawing("Line")
-    drawings.boxRight = newDrawing("Line")
-    
-    for _, boxPart in ipairs({drawings.boxTop, drawings.boxBottom, drawings.boxLeft, drawings.boxRight}) do
-        boxPart.Thickness = 1
-        boxPart.Color = settings.defaultcolor
-        boxPart.Visible = false
-        boxPart.ZIndex = 2
-    end
-
-    drawings.tracer = newDrawing("Line")
-    drawings.tracer.Thickness = 1
-    drawings.tracer.Color = settings.defaultcolor
-    drawings.tracer.Visible = false
-    drawings.tracer.ZIndex = 1
-
-    drawings.name = newDrawing("Text")
-    drawings.name.Text = player.Name
-    drawings.name.Size = 14
-    drawings.name.Center = true
-    drawings.name.Outline = true
-    drawings.name.Visible = false
-    drawings.name.Color = settings.defaultcolor
-
-    drawings.distance = newDrawing("Text")
-    drawings.distance.Size = 14
-    drawings.distance.Center = true
-    drawings.distance.Outline = true
-    drawings.distance.Visible = false
-    drawings.distance.Color = settings.defaultcolor
-
-    espCache[player] = drawings
-end
-
-local function removeEsp(player)
-    if rawget(espCache, player) then
-        for _, drawing in next, espCache[player] do
-            drawing:Remove()
+        if not autoFarmTarget or not autoFarmTarget.Character or not autoFarmTarget.Character:FindFirstChild("HumanoidRootPart") or autoFarmTarget.Character.Humanoid.Health <= 0 then
+            wait(4)
+            autoFarmTarget = getClosestPlayer()
         end
-        espCache[player] = nil
-    end
-end
+        if autoFarmTarget and autoFarmTarget.Character and autoFarmTarget.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHRP = autoFarmTarget.Character.HumanoidRootPart
+            local radius = 5
+            local height = 8
+            local speed = 2 * math.pi / 0.7
 
-local function updateEsp(player, esp)
-    local character = player and player.Character
-    if character then
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        if humanoidRootPart then
-            local rootPos, rootVisible = wtvp(humanoidRootPart.Position)
-            local visible = rootVisible
-
-            local color = settings.teamcolor and player.TeamColor.Color or settings.defaultcolor
-            for _, boxPart in ipairs({esp.boxTop, esp.boxBottom, esp.boxLeft, esp.boxRight}) do
-                boxPart.Color = color
+            while autoFarmEnabled and autoFarmTarget and autoFarmTarget.Character and autoFarmTarget.Character:FindFirstChild("HumanoidRootPart") and autoFarmTarget.Character.Humanoid.Health > 0 do
+                local angle = tick() * speed
+                local offset = Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
+                players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetHRP.Position + offset)
+                camera.CFrame = CFrame.new(camera.CFrame.Position, targetHRP.Position)
+                wait(0.01)
             end
-            esp.tracer.Color = color
-            esp.name.Color = color
-            esp.distance.Color = color
 
-            for _, boxPart in ipairs({esp.boxTop, esp.boxBottom, esp.boxLeft, esp.boxRight}) do
-                boxPart.Visible = visible and settings.boxESPEnabled
-            end
-            esp.tracer.Visible = settings.tracersEnabled and visible
-            esp.name.Visible = settings.nameESPEnabled and visible
-            esp.distance.Visible = settings.distanceESPEnabled and visible
-
-            if visible then
-                local boxWidth = settings.boxWidth * 10
-                local boxHeight = settings.boxHeight * 10
-                local x, y = round(rootPos.X, rootPos.Y)
-
-                -- Box ESP
-                esp.boxTop.From = newVector2(x - boxWidth / 2, y - boxHeight / 2)
-                esp.boxTop.To = newVector2(x + boxWidth / 2, y - boxHeight / 2)
-
-                esp.boxBottom.From = newVector2(x - boxWidth / 2, y + boxHeight / 2)
-                esp.boxBottom.To = newVector2(x + boxWidth / 2, y + boxHeight / 2)
-
-                esp.boxLeft.From = newVector2(x - boxWidth / 2, y - boxHeight / 2)
-                esp.boxLeft.To = newVector2(x - boxWidth / 2, y + boxHeight / 2)
-
-                esp.boxRight.From = newVector2(x + boxWidth / 2, y - boxHeight / 2)
-                esp.boxRight.To = newVector2(x + boxWidth / 2, y + boxHeight / 2)
-
-                -- Tracer ESP
-                local localHead = localPlayer.Character and localPlayer.Character:FindFirstChild("Head")
-                if localHead then
-                    local localHeadPos = wtvp(localHead.Position)
-                    esp.tracer.From = localHeadPos
-                    esp.tracer.To = rootPos
-                end
-
-                -- Name ESP
-                esp.name.Position = newVector2(x, y - boxHeight / 2 - 16)
-
-                -- Distance ESP
-                local distance = (localPlayer.Character.HumanoidRootPart.Position - character.HumanoidRootPart.Position).Magnitude
-                esp.distance.Text = string.format("%.0f", distance) .. "m"
-                esp.distance.Position = newVector2(x, y + boxHeight / 2 + 16)
-            end
-        end
-    else
-        for _, boxPart in ipairs({esp.boxTop, esp.boxBottom, esp.boxLeft, esp.boxRight}) do
-            boxPart.Visible = false
-        end
-        esp.tracer.Visible = false
-        esp.name.Visible = false
-        esp.distance.Visible = false
-    end
-end
-
--- Main loop
-for _, player in next, players:GetPlayers() do
-    if player ~= localPlayer then
-        createEsp(player)
-    end
-end
-
-players.PlayerAdded:Connect(function(player)
-    createEsp(player)
-end)
-
-players.PlayerRemoving:Connect(function(player)
-    removeEsp(player)
-end)
-
-runService:BindToRenderStep("esp", Enum.RenderPriority.Camera.Value, function()
-    for player, drawings in next, espCache do
-        if settings.teamcheck and player.Team == localPlayer.Team then
-            continue
-        end
-
-        if drawings and player ~= localPlayer then
-            updateEsp(player, drawings)
-        end
-    end
-end)
-
--- GUI integration with OrionLib
-ESP_Tab:AddToggle({
-    Name = "Box Esp",
-    Default = false,
-    Callback = function(Value)
-        settings.boxESPEnabled = Value
-    end    
-})
-
-ESP_Tab:AddToggle({
-    Name = "Tracers Esp",
-    Default = false,
-    Callback = function(Value)
-        settings.tracersEnabled = Value
-    end    
-})
-
-ESP_Tab:AddToggle({
-    Name = "Distance Esp",
-    Default = false,
-    Callback = function(Value)
-        settings.distanceESPEnabled = Value
-    end    
-})
-
-ESP_Tab:AddToggle({
-    Name = "Name Esp",
-    Default = false,
-    Callback = function(Value)
-        settings.nameESPEnabled = Value
-    end    
-})
-
--- Teleport function
-local function teleportPlayer(position)
-    local character = localPlayer.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        character.HumanoidRootPart.CFrame = CFrame.new(position)
-    end
-end
-
-local Misc_Tab = Window:MakeTab({
-    Name = "Misc Tab",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local Misc_Section = Misc_Tab:AddSection({
-    Name = "Misc Tab"
-})
-
-Misc_Tab:AddButton({
-    Name = "Teleport to 1v1",
-    Callback = function()
-        teleportPlayer(Vector3.new(-141.97305297851562, -681.7706909179688, 1191.3756103515625))
-    end    
-})
-
-Misc_Tab:AddButton({
-    Name = "Teleport to 2v2",
-    Callback = function()
-        teleportPlayer(Vector3.new(-143.44650268554688, -681.7706909179688, 1222.2271728515625))
-    end    
-})
-
-Misc_Tab:AddButton({
-    Name = "Teleport to 3v3",
-    Callback = function()
-        teleportPlayer(Vector3.new(-142.705322265625, -681.7706909179688, 1252.825439453125))
-    end    
-})
-
-Misc_Tab:AddButton({
-    Name = "Teleport to 4v4",
-    Callback = function()
-        teleportPlayer(Vector3.new(-98.58979797363281, -681.7706909179688, 1291.150390625))
-    end    
-})
-
-Misc_Tab:AddButton({
-    Name = "Teleport to 5v5",
-    Callback = function()
-        teleportPlayer(Vector3.new(-140.42567443847656, -682.2500610351562, 1292.6689453125))
-    end    
-})
-
-local Tab = Window:MakeTab({
-    Name = "Players Tab",
-    Icon = "rbxassetid://4483345998",
-    PremiumOnly = false
-})
-
-local Section = Tab:AddSection({
-    Name = "Players Tab"
-})
-
-local plr = game:GetService("Players")
-local Lp = plr.LocalPlayer
-local rs = game:GetService("RunService")
-local uis = game:GetService("UserInputService")
-
-local controlModule = require(Lp.PlayerScripts:WaitForChild('PlayerModule'):WaitForChild("ControlModule"))
-
-local function createVelocityAndGyro(character)
-    local bv = Instance.new("BodyVelocity")
-    bv.Name = "VelocityHandler"
-    bv.Parent = character.HumanoidRootPart
-    bv.MaxForce = Vector3.new(0, 0, 0)
-    bv.Velocity = Vector3.new(0, 0, 0)
-
-    local bg = Instance.new("BodyGyro")
-    bg.Name = "GyroHandler"
-    bg.Parent = character.HumanoidRootPart
-    bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    bg.P = 1000
-    bg.D = 50
-end
-
-createVelocityAndGyro(Lp.Character)
-
-Lp.CharacterAdded:Connect(function(NewChar)
-    createVelocityAndGyro(NewChar)
-end)
-
-local speed = 50
-local buttonIsOn = false
-local infJumpEnabled = false
-local noClipEnabled = false
-
-rs.RenderStepped:Connect(function()
-    if Lp.Character and Lp.Character:FindFirstChildOfClass("Humanoid") and Lp.Character.HumanoidRootPart and Lp.Character.HumanoidRootPart:FindFirstChild("VelocityHandler") and Lp.Character.HumanoidRootPart:FindFirstChild("GyroHandler") then
-        if buttonIsOn then
-            Lp.Character.HumanoidRootPart.VelocityHandler.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            Lp.Character.HumanoidRootPart.GyroHandler.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            Lp.Character.Humanoid.PlatformStand = true
+            wait(5)
         else
-            Lp.Character.HumanoidRootPart.VelocityHandler.MaxForce = Vector3.new(0, 0, 0)
-            Lp.Character.HumanoidRootPart.GyroHandler.MaxTorque = Vector3.new(0, 0, 0)
-            Lp.Character.Humanoid.PlatformStand = false
-            return
-        end
-
-        Lp.Character.HumanoidRootPart.GyroHandler.CFrame = workspace.CurrentCamera.CFrame
-        local direction = controlModule:GetMoveVector()
-        Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Vector3.new()
-        if direction.X > 0 then
-            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity + workspace.CurrentCamera.CFrame.RightVector * (direction.X * speed)
-        end
-        if direction.X < 0 then
-            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity + workspace.CurrentCamera.CFrame.RightVector * (direction.X * speed)
-        end
-        if direction.Z > 0 then
-            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity - workspace.CurrentCamera.CFrame.LookVector * (direction.Z * speed)
-        end
-        if direction.Z < 0 then
-            Lp.Character.HumanoidRootPart.VelocityHandler.Velocity = Lp.Character.HumanoidRootPart.VelocityHandler.Velocity - workspace.CurrentCamera.CFrame.LookVector * (direction.Z * speed)
+            wait(0.5)
         end
     end
+end
 
-    if noClipEnabled then
-        for _, v in pairs(Lp.Character:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CanCollide = false
-            end
+RunService.RenderStepped:Connect(onRenderStep)
+
+local function onCharacterAdded(character)
+    if aimbotEnabled then
+        while aimbotEnabled do
+            aimAtClosestPlayer()
+            wait()
         end
     end
-end)
+end
 
-Tab:AddToggle({
-    Name = "Fly",
-    Default = false,
+players.LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+local function onInputBegan(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton2 and aimbotEnabled then
+        aimAtClosestPlayer()
+    end
+end
+
+UserInputService.InputBegan:Connect(onInputBegan)
+
+Tab:CreateToggle({
+    Name = "Aimbot",
+    Info = {
+        Title = 'Enable or Disable Aimbot',
+        Description = 'Dont feel like typing all that but remember Dont hold fire spam the fire button',
+    },
+    CurrentValue = aimbotEnabled,
+    Flag = "AimbotToggle",
     Callback = function(Value)
-        buttonIsOn = Value
-        if Value then
-            print("Fly Enabled")
-        else
-            print("Fly Disabled")
-        end
-    end
+        aimbotEnabled = Value
+        updateFovCircle()
+    end,
 })
 
-Tab:AddSlider({
-    Name = "Fly Speed",
-    Min = 0,
-    Max = 5000,
-    Default = 50,
-    Color = Color3.fromRGB(255,255,255),
+Tab:CreateToggle({
+    Name = "Aimbot Wall Check",
+    Info = {
+        Title = 'Enable or Disable Wall Check',
+        Description = 'Checks If the person the aimbot is trying to lock on is behind a way and wont lock on to them',
+    },
+    CurrentValue = wallCheckEnabled,
+    Flag = "WallCheckToggle",
+    Callback = function(Value)
+        wallCheckEnabled = Value
+    end,
+})
+
+Tab:CreateToggle({
+    Name = "Aimbot Fov Follow Mouse",
+    Info = {
+        Title = 'Enable or Disable Aimbot Fov Follow Mouse',
+        Description = 'Makes It so the Aimbot Fov follows your Mouse Dont Use This For Mobile',
+    },
+    CurrentValue = fovFollowMouse,
+    Flag = "FovFollowMouseToggle",
+    Callback = function(Value)
+        fovFollowMouse = Value
+    end,
+})
+
+Tab:CreateToggle({
+    Name = "Win Entire Match Only Use this in a match",
+    Info = {
+        Title = 'Enable or Disable Win Entire Match Easy!!!!!!',
+        Description = 'Flys you around the target and turn on aimbot first before using it',
+    },
+    CurrentValue = autoFarmEnabled,
+    Flag = "AutoFarmToggle",
+    Callback = function(Value)
+        autoFarmEnabled = Value
+    end,
+})
+
+Tab:CreateSlider({
+    Name = "Lock On Range",
+    Info = {
+        Title = 'Change Lock On Range',
+        Description = 'Adjusts the range at which the aimbot locks on to people',
+    },
+    Range = {1, 50000},
     Increment = 1,
-    ValueName = "Speed",
+    Suffix = "Studs",
+    CurrentValue = lockOnRange,
+    Flag = "LockOnRangeSlider",
     Callback = function(Value)
-        speed = Value
-    end
+        lockOnRange = Value
+    end,
 })
 
-Tab:AddToggle({
-    Name = "Inf Jump",
-    Default = false,
+Tab:CreateSlider({
+    Name = "Aimbot Smoothness",
+    Info = {
+        Title = 'Change Aimbot Smoothness',
+        Description = 'Lets you change how smooth the Aimbot Moves (i usually have this at 0.1 but you can adjust this to whatever you like put this at 0.75',
+    },
+    Range = {0.01, 1},
+    Increment = 0.01,
+    Suffix = "",
+    CurrentValue = aimbotSmoothness,
+    Flag = "AimbotSmoothnessSlider",
     Callback = function(Value)
-        infJumpEnabled = Value
-        if Value then
-            print("Infinite Jump Enabled")
-        else
-            print("Infinite Jump Disabled")
+        aimbotSmoothness = Value
+    end,
+})
+
+Tab:CreateSlider({
+    Name = "Aimbot Fov Size",
+    Info = {
+        Title = 'Change The Aimbot Fov Size',
+        Description = 'Lets you change the size of the aimbot Fov',
+    },
+    Range = {1, 1000},
+    Increment = 1,
+    Suffix = "Studs",
+    CurrentValue = aimbotCircleSize,
+    Flag = "AimbotCircleSizeSlider",
+    Callback = function(Value)
+        aimbotCircleSize = Value
+        updateFovCircle()
+    end,
+})
+
+Tab:CreateSlider({
+    Name = "Aimbot Fov Transparency",
+    Info = {
+        Title = 'Change The Aimbot Fov Transparency',
+        Description = 'Adjusts the transparency of the Aimbot Fov So Customizable wowie',
+    },
+    Range = {0, 1},
+    Increment = 0.01,
+    Suffix = "",
+    CurrentValue = fovCircleTransparency,
+    Flag = "FovCircleTransparencySlider",
+    Callback = function(Value)
+        fovCircleTransparency = Value
+        updateFovCircle()
+    end,
+})
+
+Tab:CreateDropdown({
+    Name = "Aim Part",
+    Info = {
+        Title = 'Select Aim Part',
+        Description = 'Choose the body part the aimbot should aim that',
+    },
+    Options = {"Head", "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg"},
+    CurrentOption = aimPart,
+    Flag = "AimPartDropdown",
+    Callback = function(Value)
+        aimPart = Value
+    end,
+})
+
+Tab:CreateSpacing(nil,10)
+
+Tab:CreateColorPicker({
+    Name = "Aimbot Fov Color",
+    Color = Color3.fromRGB(2,255,255),
+    Info = {
+        Title = 'Change The Aimbot Fov Color',
+        Description = 'Adjusts the color of the Aimbot Fov circle.',
+    },
+    Default = fovCircleColor,
+    Flag = "FovCircleColorPicker",
+    Callback = function(Value)
+        fovCircleColor = Value
+        updateFovCircle()
+    end,
+})
+
+Tab:CreateToggle({
+    Name = "Wishlist Friends Only",
+    Info = {
+        Title = 'Wishlist Friends Only',
+        Description = 'Toggle to only wishlist friends.',
+    },
+    CurrentValue = wishlistFriends,
+    Flag = "WishlistFriendsToggle",
+    Callback = function(Value)
+        wishlistFriends = Value
+        if wishlistFriends then
+            local success, result = pcall(function()
+                return players:GetFriendsAsync(players.LocalPlayer.UserId)
+            end)
+            if success then
+                wishlistedUsers = {}
+                for _, friend in pairs(result) do
+                    table.insert(wishlistedUsers, friend.Username)
+                end
+            else
+                print("Error fetching friends:", result)
+            end
+        end
+    end,
+})
+
+Tab:CreateButton({
+    Name = "Clear Wishlist",
+    Info = {
+        Title = 'Clear Wishlist',
+        Description = 'Clears all users from the wishlist.',
+    },
+    Callback = function()
+        wishlistedUsers = {}
+    end,
+})
+
+-- Function to find the closest match for a username
+local function findClosestUsername(input)
+    local closestUsername = nil
+    local closestDistance = math.huge
+
+    for _, player in pairs(players:GetPlayers()) do
+        local lowerInput = string.lower(input)
+        local lowerName = string.lower(player.Name)
+        local _, matches = string.gsub(lowerName, lowerInput, "")
+        local distance = #lowerInput + #lowerName - 2 * matches
+        if matches > 0 and distance < closestDistance then
+            closestDistance = distance
+            closestUsername = player.Name
         end
     end
-})
 
-uis.JumpRequest:Connect(function()
-    if infJumpEnabled and Lp.Character and Lp.Character:FindFirstChildOfClass("Humanoid") then
-        Lp.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-    end
-end)
+    return closestUsername
+end
 
-Tab:AddToggle({
-    Name = "No Clip",
-    Default = false,
-    Callback = function(Value)
-        noClipEnabled = Value
-        if Value then
-            print("No Clip Enabled")
-        else
-            print("No Clip Disabled")
+-- Update wishlist to store closest matching usernames
+Tab:CreateInput({
+    Name = "Wishlist Users On Skibidi",
+    PlaceholderText = "The Aimbot wont lock on wishlistedUsers put a comma to show different users",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        wishlistedUsers = {}
+        local userInput = string.split(Text, ",")
+        for _, user in pairs(userInput) do
+            user = user:match("^%s*(.-)%s*$") -- trim whitespace
+            if user ~= "" then
+                local closestMatch = findClosestUsername(user)
+                if closestMatch then
+                    table.insert(wishlistedUsers, closestMatch)
+                end
+            end
         end
-    end
+    end,
 })
-
-OrionLib:Init()
