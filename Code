@@ -34,57 +34,58 @@ local Window = ArrayField:CreateWindow({
 
 local Tab = Window:CreateTab("Main Tab", 4483362458)
 
+-- Aimbot settings
 local aimbotEnabled = false
 local wallCheckEnabled = false
 local aimbotFov = 175
+local fovTransparency = 0.4
 local lockOnRange = 3000
-local aimbotSmoothness = 0.1
-local aimbotCircleSize = 175
 local fovCircle = nil
 local aimPart = "Head"
 local fovFollowMouse = false
-local autoFarmEnabled = false
-local espEnabled = false
 local players = game:GetService("Players")
 local camera = workspace.CurrentCamera
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local wishlistedUsers = {}
 local wishlistFriends = false
-
 local fovCircleColor = Color3.new(1, 1, 1)
-local fovCircleTransparency = 0.4
-local autoFarmTarget = nil
 
 local function createFovCircle()
-    if fovCircle then return end
+    if fovCircle then fovCircle:Remove() end
     fovCircle = Drawing.new("Circle")
     fovCircle.Thickness = 2
     fovCircle.NumSides = 64
     fovCircle.Radius = aimbotFov
     fovCircle.Color = fovCircleColor
-    fovCircle.Transparency = fovCircleTransparency
+    fovCircle.Transparency = fovTransparency
     fovCircle.Visible = aimbotEnabled
 end
 
 local function updateFovCircle()
     if fovCircle then
         fovCircle.Position = fovFollowMouse and UserInputService:GetMouseLocation() or Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
-        fovCircle.Radius = aimbotCircleSize
+        fovCircle.Radius = aimbotFov
         fovCircle.Color = fovCircleColor
-        fovCircle.Transparency = fovCircleTransparency
+        fovCircle.Transparency = fovTransparency
         fovCircle.Visible = aimbotEnabled
     end
 end
 
-createFovCircle()
+local function isPlayerVisible(target)
+    local origin = camera.CFrame.Position
+    local _, onScreen = camera:WorldToScreenPoint(target.Position)
+    if not onScreen then
+        return false
+    end
 
-local function isWallBetween(part)
-    if not wallCheckEnabled then return false end
-    local cameraPos = camera.CFrame.Position
-    local ray = Ray.new(cameraPos, part.Position - cameraPos)
-    local partHit = workspace:FindPartOnRayWithIgnoreList(ray, {camera, part.Parent})
-    return partHit and partHit.Parent ~= part.Parent
+    local ray = Ray.new(origin, (target.Position - origin).unit * lockOnRange)
+    local part, hitPosition = workspace:FindPartOnRayWithIgnoreList(ray, {camera, players.LocalPlayer.Character})
+    if part and part:IsDescendantOf(target.Parent) then
+        return true
+    end
+
+    return false
 end
 
 local function isUserWishlisted(username)
@@ -97,94 +98,48 @@ local function isUserWishlisted(username)
 end
 
 local function getClosestPlayer()
-    local closestPlayer, shortestDistance = nil, math.huge
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+
     for _, player in pairs(players:GetPlayers()) do
-        if player ~= players.LocalPlayer and player.Character and player.Character:FindFirstChild(aimPart) and not isUserWishlisted(player.Name) then
-            local part = player.Character[aimPart]
-            local partPos = camera:WorldToViewportPoint(part.Position)
-            local distance = (Vector2.new(partPos.X, partPos.Y) - fovCircle.Position).Magnitude
-            local range = (camera.CFrame.Position - part.Position).Magnitude
-            if distance < aimbotFov and distance < shortestDistance and range < lockOnRange and not isWallBetween(part) then
-                closestPlayer = player
-                shortestDistance = distance
+        if player ~= players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            local humanoid = player.Character.Humanoid
+
+            if humanoid.Health > 0 then
+                local screenPoint = camera:WorldToScreenPoint(hrp.Position)
+                local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - (fovFollowMouse and UserInputService:GetMouseLocation() or Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2))).Magnitude
+
+                if distanceFromCenter <= aimbotFov and (not wallCheckEnabled or isPlayerVisible(hrp)) then
+                    local distance = (hrp.Position - players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                    if distance < shortestDistance then
+                        shortestDistance = distance
+                        closestPlayer = player
+                    end
+                end
             end
         end
     end
+
     return closestPlayer
 end
 
-local currentTarget = nil
-
 local function aimAtClosestPlayer()
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild(aimPart) or currentTarget.Character.Humanoid.Health <= 0 then
-        currentTarget = getClosestPlayer()
-    end
-    if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild(aimPart) then
-        local part = currentTarget.Character[aimPart]
-        camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, part.Position), aimbotSmoothness)
+    if aimbotEnabled then
+        local closestPlayer = getClosestPlayer()
+        if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild(aimPart) then
+            local target = closestPlayer.Character[aimPart]
+            camera.CFrame = CFrame.new(camera.CFrame.Position, target.Position)
+        end
     end
 end
 
-local function onRenderStep()
-    if aimbotEnabled then
-        aimAtClosestPlayer()
-    end
+RunService.RenderStepped:Connect(function()
     updateFovCircle()
+    aimAtClosestPlayer()
+end)
 
-    if autoFarmEnabled then
-        if not autoFarmTarget or not autoFarmTarget.Character or not autoFarmTarget.Character:FindFirstChild("HumanoidRootPart") or autoFarmTarget.Character.Humanoid.Health <= 0 then
-            autoFarmTarget = nil
-            wait(5)
-            autoFarmTarget = getClosestPlayer()
-        end
-        if autoFarmTarget and autoFarmTarget.Character and autoFarmTarget.Character:FindFirstChild("HumanoidRootPart") then
-            local targetHRP = autoFarmTarget.Character.HumanoidRootPart
-            local radius = 5
-            local height = 8
-            local speed = 2 * math.pi / 0.7
-
-            while autoFarmEnabled and autoFarmTarget and autoFarmTarget.Character and autoFarmTarget.Character:FindFirstChild("HumanoidRootPart") and autoFarmTarget.Character.Humanoid.Health > 0 do
-                local angle = tick() * speed
-                local offset = Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
-                players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetHRP.Position + offset)
-                camera.CFrame = CFrame.new(camera.CFrame.Position, targetHRP.Position)
-                wait(0.01)
-            end
-        else
-            wait(0.5)
-        end
-    end
-end
-
-RunService.RenderStepped:Connect(onRenderStep)
-
-local function onCharacterAdded(character)
-    if aimbotEnabled then
-        while aimbotEnabled do
-            aimAtClosestPlayer()
-            wait()
-        end
-    end
-end
-
-local function setupAimbot()
-    if players.LocalPlayer.Character then
-        onCharacterAdded(players.LocalPlayer.Character)
-    end
-    players.LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
-end
-
-setupAimbot()
-
-local function onInputBegan(input, gameProcessedEvent)
-    if gameProcessedEvent then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton2 and aimbotEnabled then
-        aimAtClosestPlayer()
-    end
-end
-
-UserInputService.InputBegan:Connect(onInputBegan)
-
+-- Aimbot UI
 Tab:CreateToggle({
     Name = "Aimbot",
     Info = {
@@ -222,51 +177,7 @@ Tab:CreateToggle({
     Flag = "FovFollowMouseToggle",
     Callback = function(Value)
         fovFollowMouse = Value
-    end,
-})
-
-Tab:CreateToggle({
-    Name = "Win Entire Match Only Use this in a match",
-    Info = {
-        Title = 'Enable or Disable Win Entire Match Easy!!!!!!',
-        Description = 'Flys you around the target and turn on aimbot first before using it',
-    },
-    CurrentValue = autoFarmEnabled,
-    Flag = "AutoFarmToggle",
-    Callback = function(Value)
-        autoFarmEnabled = Value
-    end,
-})
-
-Tab:CreateSlider({
-    Name = "Lock On Range",
-    Info = {
-        Title = 'Change Lock On Range',
-        Description = 'Adjusts the range at which the aimbot locks on to people',
-    },
-    Range = {1, 50000},
-    Increment = 1,
-    Suffix = "Studs",
-    CurrentValue = lockOnRange,
-    Flag = "LockOnRangeSlider",
-    Callback = function(Value)
-        lockOnRange = Value
-    end,
-})
-
-Tab:CreateSlider({
-    Name = "Aimbot Smoothness",
-    Info = {
-        Title = 'Change Aimbot Smoothness',
-        Description = 'Lets you change how smooth the Aimbot Moves (i usually have this at 0.1 but you can adjust this to whatever you like put this at 0.75',
-    },
-    Range = {0.01, 1},
-    Increment = 0.01,
-    Suffix = "",
-    CurrentValue = aimbotSmoothness,
-    Flag = "AimbotSmoothnessSlider",
-    Callback = function(Value)
-        aimbotSmoothness = Value
+        updateFovCircle()
     end,
 })
 
@@ -279,10 +190,10 @@ Tab:CreateSlider({
     Range = {1, 1000},
     Increment = 1,
     Suffix = "Studs",
-    CurrentValue = aimbotCircleSize,
-    Flag = "AimbotCircleSizeSlider",
+    CurrentValue = aimbotFov,
+    Flag = "AimbotFovSlider",
     Callback = function(Value)
-        aimbotCircleSize = Value
+        aimbotFov = Value
         updateFovCircle()
     end,
 })
@@ -291,32 +202,52 @@ Tab:CreateSlider({
     Name = "Aimbot Fov Transparency",
     Info = {
         Title = 'Change The Aimbot Fov Transparency',
-        Description = 'Adjusts the transparency of the Aimbot Fov So Customizable wowie',
+        Description = 'Lets you change the transparency of the aimbot Fov',
     },
     Range = {0, 1},
-    Increment = 0.01,
+    Increment = 0.1,
     Suffix = "",
-    CurrentValue = fovCircleTransparency,
-    Flag = "FovCircleTransparencySlider",
+    CurrentValue = fovTransparency,
+    Flag = "AimbotFovTransparencySlider",
     Callback = function(Value)
-        fovCircleTransparency = Value
+        fovTransparency = Value
         updateFovCircle()
     end,
 })
 
 Tab:CreateDropdown({
-    Name = "Aim Part",
+    Name = "Aimbot Aim Part",
     Info = {
-        Title = 'Select Aim Part',
-        Description = 'Choose the body part the aimbot should aim that',
+        Title = 'Change The Aimbot Aim Part',
+        Description = 'Lets you change the part of the target the aimbot aims at',
     },
-    Options = {"Head", "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg"},
+    Options = {"Head", "Torso", "HumanoidRootPart"},
     CurrentOption = aimPart,
-    Flag = "AimPartDropdown",
+    Flag = "AimbotAimPartDropdown",
     Callback = function(Value)
         aimPart = Value
     end,
 })
+
+Tab:CreateSlider({
+    Name = "Aimbot Lock On Range",
+    Info = {
+        Title = 'Change The Aimbot Lock On Range',
+        Description = 'Lets you change the range at which the aimbot locks on to targets',
+    },
+    Range = {100, 10000},
+    Increment = 100,
+    Suffix = "Studs",
+    CurrentValue = lockOnRange,
+    Flag = "AimbotLockOnRangeSlider",
+    Callback = function(Value)
+        lockOnRange = Value
+    end,
+})
+
+-- Initialize FOV circle
+createFovCircle()
+
 
 Tab:CreateSpacing(nil,10)
 
