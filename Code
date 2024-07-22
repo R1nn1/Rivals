@@ -113,10 +113,14 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
+local currentTarget = nil
+
 local function aimAtClosestPlayer()
-    local closestPlayer = getClosestPlayer()
-    if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild(aimPart) then
-        local part = closestPlayer.Character[aimPart]
+    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild(aimPart) or currentTarget.Character.Humanoid.Health <= 0 then
+        currentTarget = getClosestPlayer()
+    end
+    if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild(aimPart) then
+        local part = currentTarget.Character[aimPart]
         camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, part.Position), aimbotSmoothness)
     end
 end
