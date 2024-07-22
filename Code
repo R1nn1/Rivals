@@ -129,6 +129,7 @@ local function onRenderStep()
 
     if autoFarmEnabled then
         if not autoFarmTarget or not autoFarmTarget.Character or not autoFarmTarget.Character:FindFirstChild("HumanoidRootPart") or autoFarmTarget.Character.Humanoid.Health <= 0 then
+            autoFarmTarget = nil
             wait(4)
             autoFarmTarget = getClosestPlayer()
         end
@@ -145,10 +146,6 @@ local function onRenderStep()
                 camera.CFrame = CFrame.new(camera.CFrame.Position, targetHRP.Position)
                 wait(0.01)
             end
-
-            wait(5)
-        else
-            wait(0.5)
         end
     end
 end
@@ -324,6 +321,7 @@ Tab:CreateColorPicker({
         updateFovCircle()
     end,
 })
+
 
 Tab:CreateToggle({
     Name = "Wishlist Friends Only",
