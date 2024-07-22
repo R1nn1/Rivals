@@ -167,7 +167,14 @@ local function onCharacterAdded(character)
     end
 end
 
-players.LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+local function setupAimbot()
+    if players.LocalPlayer.Character then
+        onCharacterAdded(players.LocalPlayer.Character)
+    end
+    players.LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+end
+
+setupAimbot()
 
 local function onInputBegan(input, gameProcessedEvent)
     if gameProcessedEvent then return end
