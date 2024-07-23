@@ -345,7 +345,6 @@ Tab:CreateInput({
     end,
 })
 
-
 Tab:CreateSpacing(nil, 10)
 
 local AutoVoteMap = false
@@ -415,8 +414,11 @@ Tab:CreateToggle({
         if AutoVoteMap then
             print("Auto Vote Map enabled")
             randomExecutor = game:GetService("RunService").Heartbeat:Connect(function()
-                if selectedOption and mapActions[selectedOption] then
-                    mapActions[selectedOption]()
+                while AutoVoteMap do
+                    if selectedOption and mapActions[selectedOption] then
+                        mapActions[selectedOption]()
+                    end
+                    wait(2)
                 end
             end)
         else
@@ -441,6 +443,7 @@ Tab:CreateDropdown({
         print("Selected map: " .. Option)
     end,
 })
+
 
 local VisualsTab = Window:CreateTab("Visuals Tab", 4483362458) -- Title, Image
 
