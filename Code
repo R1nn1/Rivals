@@ -64,7 +64,6 @@ local function createFovCircle()
     fovCircle.Color = fovCircleColor
     fovCircle.Transparency = fovTransparency
     fovCircle.Visible = aimbotEnabled
-    print("FOV circle created")
 end
 
 local function updateFovCircle()
@@ -74,7 +73,6 @@ local function updateFovCircle()
         fovCircle.Color = fovCircleColor
         fovCircle.Transparency = fovTransparency
         fovCircle.Visible = aimbotEnabled
-        print("FOV circle updated")
     end
 end
 
@@ -346,6 +344,7 @@ Tab:CreateInput({
         end
     end,
 })
+
 
 Tab:CreateSpacing(nil, 10)
 
