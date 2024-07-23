@@ -1,5 +1,9 @@
 local ArrayField = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/Refinement/main/MC%3AArrayfield%20Library"))()
 
+if not ArrayField then
+    error("Failed to load ArrayField library")
+end
+
 local Window = ArrayField:CreateWindow({
     Name = "Rinns Hub Rivals",
     LoadingTitle = "Rinns Hub Rivals",
@@ -60,6 +64,7 @@ local function createFovCircle()
     fovCircle.Color = fovCircleColor
     fovCircle.Transparency = fovTransparency
     fovCircle.Visible = aimbotEnabled
+    print("FOV circle created")
 end
 
 local function updateFovCircle()
@@ -69,6 +74,7 @@ local function updateFovCircle()
         fovCircle.Color = fovCircleColor
         fovCircle.Transparency = fovTransparency
         fovCircle.Visible = aimbotEnabled
+        print("FOV circle updated")
     end
 end
 
@@ -248,7 +254,6 @@ Tab:CreateSlider({
 -- Initialize FOV circle
 createFovCircle()
 
-
 Tab:CreateSpacing(nil,10)
 
 Tab:CreateColorPicker({
@@ -341,5 +346,3 @@ Tab:CreateInput({
         end
     end,
 })
-
-
