@@ -429,11 +429,16 @@ Tab:CreateDropdown({
 
 local VisualsTab = Window:CreateTab("Visuals Tab", 4483362458) -- Title, Image
 
-local highlightColor = Color3.fromRGB(2, 255, 255)
+ local highlightColor = Color3.fromRGB(2, 255, 255)
 local healthBarFillColor = Color3.fromRGB(0, 255, 0)  -- Initially set to green
 local healthBarOutlineColor = Color3.fromRGB(0, 0, 0)
+local healthTextColor = Color3.fromRGB(255, 255, 255)
 local highlightEnabled = false
 local healthBarEnabled = false
+local healthTextEnabled = false
+local visualsOnSelf = false
+
+local localPlayer = game.Players.LocalPlayer
 
 local function updatePlayerHighlights(player, enabled, color)
     local character = player.Character or player.CharacterAdded:Wait()
@@ -485,7 +490,36 @@ local function removeHealthBar(player)
     end
 end
 
-local function updateHealthBars()
+local function createHealthText(player)
+    local character = player.Character or player.CharacterAdded:Wait()
+    if not character then return end
+
+    local healthTextGui = Instance.new("BillboardGui")
+    healthTextGui.Name = "HealthText"
+    healthTextGui.Adornee = character:FindFirstChild("Head")
+    healthTextGui.Size = UDim2.new(0, 100, 0, 25)  -- Smaller size
+    healthTextGui.StudsOffset = Vector3.new(0, 2, 0)
+    healthTextGui.AlwaysOnTop = true
+
+    local healthTextLabel = Instance.new("TextLabel", healthTextGui)
+    healthTextLabel.Size = UDim2.new(1, 0, 1, 0)
+    healthTextLabel.BackgroundTransparency = 1
+    healthTextLabel.TextColor3 = healthTextColor
+    healthTextLabel.TextScaled = true
+    healthTextLabel.TextStrokeTransparency = 0
+
+    healthTextGui.Parent = character
+end
+
+local function removeHealthText(player)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local healthTextGui = character:FindFirstChild("HealthText")
+    if healthTextGui then
+        healthTextGui:Destroy()
+    end
+end
+
+local function updateHealthBarsAndText()
     for _, player in ipairs(game.Players:GetPlayers()) do
         local character = player.Character
         if character then
@@ -496,6 +530,13 @@ local function updateHealthBars()
                     local healthBar = healthBarFrame:FindFirstChild("Health")
                     if healthBar then
                         healthBar.Size = UDim2.new(1, -2, humanoid.Health / humanoid.MaxHealth, -2)
+                    end
+                end
+                local healthTextGui = character:FindFirstChild("HealthText")
+                if healthTextGui then
+                    local healthTextLabel = healthTextGui:FindFirstChildOfClass("TextLabel")
+                    if healthTextLabel then
+                        healthTextLabel.Text = string.format("%d/%d", humanoid.Health, humanoid.MaxHealth)
                     end
                 end
             end
@@ -511,12 +552,16 @@ local function onPlayerAdded(player)
         if healthBarEnabled then
             createHealthBar(player)
         end
+        if healthTextEnabled then
+            createHealthText(player)
+        end
     end)
 end
 
 local function onPlayerRemoving(player)
     updatePlayerHighlights(player, false)
     removeHealthBar(player)
+    removeHealthText(player)
 end
 
 for _, player in ipairs(game.Players:GetPlayers()) do
@@ -525,7 +570,7 @@ end
 
 game.Players.PlayerAdded:Connect(onPlayerAdded)
 game.Players.PlayerRemoving:Connect(onPlayerRemoving)
-game:GetService("RunService").RenderStepped:Connect(updateHealthBars)
+game:GetService("RunService").RenderStepped:Connect(updateHealthBarsAndText)
 
 VisualsTab:CreateToggle({
     Name = "Hightlights Esp",
@@ -539,7 +584,9 @@ VisualsTab:CreateToggle({
     Callback = function(Value)
         highlightEnabled = Value
         for _, player in ipairs(game.Players:GetPlayers()) do
-            updatePlayerHighlights(player, highlightEnabled, highlightColor)
+            if player ~= localPlayer or visualsOnSelf then
+                updatePlayerHighlights(player, highlightEnabled, highlightColor)
+            end
         end
     end,
 })
@@ -554,7 +601,9 @@ VisualsTab:CreateColorPicker({
         highlightColor = Value
         if highlightEnabled then
             for _, player in ipairs(game.Players:GetPlayers()) do
-                updatePlayerHighlights(player, highlightEnabled, highlightColor)
+                if player ~= localPlayer or visualsOnSelf then
+                    updatePlayerHighlights(player, highlightEnabled, highlightColor)
+                end
             end
         end
     end
@@ -572,10 +621,12 @@ VisualsTab:CreateToggle({
     Callback = function(Value)
         healthBarEnabled = Value
         for _, player in ipairs(game.Players:GetPlayers()) do
-            if healthBarEnabled then
-                createHealthBar(player)
-            else
-                removeHealthBar(player)
+            if player ~= localPlayer or visualsOnSelf then
+                if healthBarEnabled then
+                    createHealthBar(player)
+                else
+                    removeHealthBar(player)
+                end
             end
         end
     end,
@@ -591,13 +642,15 @@ VisualsTab:CreateColorPicker({
         healthBarOutlineColor = Value
         if healthBarEnabled then
             for _, player in ipairs(game.Players:GetPlayers()) do
-                local character = player.Character
-                if character then
-                    local healthBarFrame = character:FindFirstChild("HealthBar")
-                    if healthBarFrame then
-                        local backgroundBar = healthBarFrame:FindFirstChildOfClass("Frame")
-                        if backgroundBar then
-                            backgroundBar.BackgroundColor3 = healthBarOutlineColor
+                if player ~= localPlayer or visualsOnSelf then
+                    local character = player.Character
+                    if character then
+                        local healthBarFrame = character:FindFirstChild("HealthBar")
+                        if healthBarFrame then
+                            local backgroundBar = healthBarFrame:FindFirstChildOfClass("Frame")
+                            if backgroundBar then
+                                backgroundBar.BackgroundColor3 = healthBarOutlineColor
+                            end
                         end
                     end
                 end
@@ -614,15 +667,17 @@ VisualsTab:CreateColorPicker({
         healthBarFillColor = Value
         if healthBarEnabled then
             for _, player in ipairs(game.Players:GetPlayers()) do
-                local character = player.Character
-                if character then
-                    local healthBarFrame = character:FindFirstChild("HealthBar")
-                    if healthBarFrame then
-                        local backgroundBar = healthBarFrame:FindFirstChildOfClass("Frame")
-                        if backgroundBar then
-                            local healthBar = backgroundBar:FindFirstChild("Health")
-                            if healthBar then
-                                healthBar.BackgroundColor3 = healthBarFillColor
+                if player ~= localPlayer or visualsOnSelf then
+                    local character = player.Character
+                    if character then
+                        local healthBarFrame = character:FindFirstChild("HealthBar")
+                        if healthBarFrame then
+                            local backgroundBar = healthBarFrame:FindFirstChildOfClass("Frame")
+                            if backgroundBar then
+                                local healthBar = backgroundBar:FindFirstChild("Health")
+                                if healthBar then
+                                    healthBar.BackgroundColor3 = healthBarFillColor
+                                end
                             end
                         end
                     end
@@ -632,3 +687,55 @@ VisualsTab:CreateColorPicker({
     end
 })
 
+VisualsTab:CreateToggle({
+    Name = "Show Health Text",
+    Info = {
+        Title = 'Enable Or Disable Health Text',
+        Image = '12735851647',
+        Description = 'Displays Health Text above Every Player',
+    },
+    CurrentValue = false,
+    Flag = "ShowHealthText",
+    Callback = function(Value)
+        healthTextEnabled = Value
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player ~= localPlayer or visualsOnSelf then
+                if healthTextEnabled then
+                    createHealthText(player)
+                else
+                    removeHealthText(player)
+                end
+            end
+        end
+    end,
+})
+
+VisualsTab:CreateToggle({
+    Name = "Show Visuals on yourself",
+    Info = {
+        Title = 'Enable Or Disable Visuals on yourself',
+        Image = '12735851647',
+        Description = 'Displays ESP, Health Bar, and Health Text on yourself',
+    },
+    CurrentValue = false,
+    Flag = "ShowVisualsOnSelf",
+    Callback = function(Value)
+        visualsOnSelf = Value
+        local player = localPlayer
+        if visualsOnSelf then
+            if highlightEnabled then
+                updatePlayerHighlights(player, highlightEnabled, highlightColor)
+            end
+            if healthBarEnabled then
+                createHealthBar(player)
+            end
+            if healthTextEnabled then
+                createHealthText(player)
+            end
+        else
+            updatePlayerHighlights(player, false)
+            removeHealthBar(player)
+            removeHealthText(player)
+        end
+    end,
+})
