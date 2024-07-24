@@ -757,3 +757,234 @@ VisualsTab:CreateToggle({
         end
     end,
 })
+
+local MiscTab = Window:CreateTab("Misc Tab", 4483362458) -- Title, Image
+
+VisualsTab:CreateSpacing(nil,10)
+
+local function getPlayerViewModels()
+    local player = game.Players.LocalPlayer
+    local viewModels = workspace:FindFirstChild("ViewModels")
+    local playerViewModels = {}
+
+    if viewModels then
+        for _, child in pairs(viewModels:GetChildren()) do
+            if string.find(child.Name, player.Name) then
+                table.insert(playerViewModels, child)
+            end
+        end
+    end
+
+    return playerViewModels
+end
+
+local function applyRainbowEffect(part)
+    local runService = game:GetService("RunService")
+    local connection
+
+    connection = runService.RenderStepped:Connect(function()
+        local hue = tick() % 5 / 5
+        local color = Color3.fromHSV(hue, 1, 1)
+        for _, child in pairs(part:GetChildren()) do
+            if child:IsA("BasePart") then
+                child.Color = color
+            end
+        end
+    end)
+
+    return connection
+end
+
+local function applyRainbowToItem(item)
+    local connections = {}
+
+    local body = item:FindFirstChild("ItemVisual"):FindFirstChild("Body")
+    local magazine = item:FindFirstChild("ItemVisual"):FindFirstChild("Magazine")
+
+    if body then
+        table.insert(connections, applyRainbowEffect(body))
+    end
+
+    if magazine then
+        table.insert(connections, applyRainbowEffect(magazine))
+    end
+
+    return connections
+end
+
+local function stopRainbowEffect(connections)
+    for _, connection in pairs(connections) do
+        if typeof(connection) == "RBXScriptConnection" then
+            connection:Disconnect()
+        end
+    end
+end
+
+local originalColors = {}
+
+local function saveOriginalColors(item)
+    local itemVisual = item:FindFirstChild("ItemVisual")
+    if itemVisual then
+        local body = itemVisual:FindFirstChild("Body")
+        local magazine = itemVisual:FindFirstChild("Magazine")
+
+        if body then
+            for _, part in pairs(body:GetChildren()) do
+                if part:IsA("BasePart") then
+                    originalColors[part] = part.Color
+                end
+            end
+        end
+
+        if magazine then
+            for _, part in pairs(magazine:GetChildren()) do
+                if part:IsA("BasePart") then
+                    originalColors[part] = part.Color
+                end
+            end
+        end
+    end
+end
+
+local function restoreOriginalColors()
+    for part, color in pairs(originalColors) do
+        if part then
+            part.Color = color
+        end
+    end
+end
+
+local rainbowConnections = {}
+local rainbowEnabled = false
+local currentColor = Color3.fromRGB(2, 255, 255)
+local currentTransparency = 0
+
+local function updateRainbowEffect()
+    if not rainbowEnabled then
+        stopRainbowEffect(rainbowConnections)
+        restoreOriginalColors()
+        rainbowConnections = {}
+    else
+        local viewModels = getPlayerViewModels()
+        for _, viewModel in pairs(viewModels) do
+            saveOriginalColors(viewModel)
+            local itemConnections = applyRainbowToItem(viewModel)
+            for _, conn in pairs(itemConnections) do
+                table.insert(rainbowConnections, conn)
+            end
+        end
+    end
+end
+
+local function updateColor()
+    if not rainbowEnabled then
+        local viewModels = getPlayerViewModels()
+        for _, viewModel in pairs(viewModels) do
+            local itemVisual = viewModel:FindFirstChild("ItemVisual")
+            if itemVisual then
+                local body = itemVisual:FindFirstChild("Body")
+                local magazine = itemVisual:FindFirstChild("Magazine")
+
+                if body then
+                    for _, part in pairs(body:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.Color = currentColor
+                        end
+                    end
+                end
+
+                if magazine then
+                    for _, part in pairs(magazine:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.Color = currentColor
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function updateTransparency()
+    local viewModels = getPlayerViewModels()
+    for _, viewModel in pairs(viewModels) do
+        local itemVisual = viewModel:FindFirstChild("ItemVisual")
+        if itemVisual then
+            local body = itemVisual:FindFirstChild("Body")
+            local magazine = itemVisual:FindFirstChild("Magazine")
+
+            if body then
+                for _, part in pairs(body:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.Transparency = currentTransparency
+                    end
+                end
+            end
+
+            if magazine then
+                for _, part in pairs(magazine:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.Transparency = currentTransparency
+                    end
+                end
+            end
+        end
+    end
+end
+
+MiscTab:CreateToggle({
+    Name = "Rainbow Weapon",
+    Info = {
+        Title = 'Rainbow Weapon',
+        Image = '12735851647',
+        Description = 'Makes your weapon transition rainbow so epic',
+    },
+    CurrentValue = false,
+    Flag = "RainbowWeapon",
+    Callback = function(Value)
+        rainbowEnabled = Value
+        if Value then
+            updateRainbowEffect()
+        else
+            stopRainbowEffect(rainbowConnections)
+            restoreOriginalColors()
+            updateColor()
+            updateTransparency()
+        end
+    end,
+})
+
+MiscTab:CreateSpacing(nil,10)
+
+MiscTab:CreateColorPicker({
+    Name = "Weapon Color Picker",
+    Color = Color3.fromRGB(2, 255, 255),
+    Flag = "WeaponColorPicker",
+    Callback = function(Value)
+        currentColor = Value
+        if not rainbowEnabled then
+            updateColor()
+        end
+    end,
+})
+
+MiscTab:CreateSlider({
+    Name = "Weapon Transparency",
+    Range = {0, 1},
+    Increment = 0.01,
+    Suffix = "Transparent",
+    CurrentValue = 0,
+    Flag = "WeaponTransSlider",
+    Callback = function(Value)
+        currentTransparency = Value
+        updateTransparency()
+    end,
+})
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if rainbowEnabled then
+        updateRainbowEffect()
+    end
+end)
+
+print("Script loaded successfully")
