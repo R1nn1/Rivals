@@ -232,7 +232,7 @@ Tab:CreateSlider({
         Description = 'Lets you change the thickness of the aimbot Fov',
     },
     Range = {1, 10},
-    Increment = 1,
+    Increment = 0.1,
     Suffix = "",
     CurrentValue = fovThickness,
     Flag = "AimbotFovThicknessSlider",
@@ -463,8 +463,6 @@ Tab:CreateToggle({
         end
     end,
 })
-
-Tab:CreateSpacing(nil, 10)
 
 Tab:CreateDropdown({
     Name = "Map Selector",
