@@ -43,6 +43,7 @@ local aimbotEnabled = false
 local wallCheckEnabled = false
 local aimbotFov = 175
 local fovTransparency = 0.4
+local fovThickness = 2
 local lockOnRange = 3000
 local fovCircle = nil
 local aimPart = "Head"
@@ -58,7 +59,7 @@ local fovCircleColor = Color3.new(1, 1, 1)
 local function createFovCircle()
     if fovCircle then fovCircle:Remove() end
     fovCircle = Drawing.new("Circle")
-    fovCircle.Thickness = 2
+    fovCircle.Thickness = fovThickness
     fovCircle.NumSides = 64
     fovCircle.Radius = aimbotFov
     fovCircle.Color = fovCircleColor
@@ -72,6 +73,7 @@ local function updateFovCircle()
         fovCircle.Radius = aimbotFov
         fovCircle.Color = fovCircleColor
         fovCircle.Transparency = fovTransparency
+        fovCircle.Thickness = fovThickness
         fovCircle.Visible = aimbotEnabled
     end
 end
@@ -133,7 +135,11 @@ local function aimAtClosestPlayer()
         local closestPlayer = getClosestPlayer()
         if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild(aimPart) then
             local target = closestPlayer.Character[aimPart]
-            camera.CFrame = CFrame.new(camera.CFrame.Position, target.Position)
+            local targetPosition = target.Position
+            local currentCameraPosition = camera.CFrame.Position
+            local direction = (targetPosition - currentCameraPosition).unit
+            local targetCameraCFrame = CFrame.new(currentCameraPosition, currentCameraPosition + direction)
+            camera.CFrame = targetCameraCFrame
         end
     end
 end
@@ -219,6 +225,23 @@ Tab:CreateSlider({
     end,
 })
 
+Tab:CreateSlider({
+    Name = "Aimbot Fov Thickness",
+    Info = {
+        Title = 'Change The Aimbot Fov Thickness',
+        Description = 'Lets you change the thickness of the aimbot Fov',
+    },
+    Range = {1, 10},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = fovThickness,
+    Flag = "AimbotFovThicknessSlider",
+    Callback = function(Value)
+        fovThickness = Value
+        updateFovCircle()
+    end,
+})
+
 Tab:CreateDropdown({
     Name = "Aimbot Aim Part",
     Info = {
@@ -246,6 +269,17 @@ Tab:CreateSlider({
     Flag = "AimbotLockOnRangeSlider",
     Callback = function(Value)
         lockOnRange = Value
+    end,
+})
+
+Tab:CreateKeybind({
+    Name = "Aimbot Toggle Keybind",
+    CurrentKeybind = "Q",
+    HoldToInteract = false,
+    Flag = "AimbotKeybind",
+    Callback = function(Keybind)
+        aimbotEnabled = not aimbotEnabled
+        updateFovCircle()
     end,
 })
 
