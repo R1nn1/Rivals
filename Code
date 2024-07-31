@@ -191,6 +191,8 @@ Tab:CreateToggle({
     end,
 })
 
+Tab:CreateSpacing(nil,5)
+
 Tab:CreateSlider({
     Name = "Aimbot Fov Size",
     Info = {
