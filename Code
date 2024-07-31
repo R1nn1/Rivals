@@ -286,8 +286,6 @@ Tab:CreateKeybind({
 -- Initialize FOV circle
 createFovCircle()
 
-Tab:CreateSpacing(nil,10)
-
 Tab:CreateColorPicker({
     Name = "Aimbot Fov Color",
     Color = Color3.fromRGB(2,255,255),
