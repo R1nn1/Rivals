@@ -301,6 +301,7 @@ Tab:CreateColorPicker({
     end,
 })
 
+Tab:CreateSpacing(nil,10)
 print("Script didn't load successfully")
 
 Tab:CreateToggle({
