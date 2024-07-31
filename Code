@@ -301,6 +301,8 @@ Tab:CreateColorPicker({
     end,
 })
 
+print("Script didn't load successfully")
+
 Tab:CreateToggle({
     Name = "Wishlist Friends Only",
     Info = {
