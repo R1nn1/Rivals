@@ -1018,5 +1018,298 @@ game:GetService("RunService").RenderStepped:Connect(function()
         updateRainbowEffect()
     end
 end)
+local PlayerTab = Window:CreateTab("Players Tab", 4483362458) -- Title, Image
+
+PlayerTab:CreateSpacing(nil,10)
+
+local enableLongJump = false
+local enableScytheDash = false
+local enableClickTeleport = false
+
+local function createLongJumpButton()
+    if game.CoreGui:FindFirstChild("LongJumpGui") then
+        return
+    end
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "LongJumpGui"
+    screenGui.Parent = game.CoreGui
+
+    local longJumpButton = Instance.new("TextButton")
+    longJumpButton.Size = UDim2.new(0, 50, 0, 50)
+    longJumpButton.Position = UDim2.new(1, -60, 0.5, -25)
+    longJumpButton.Text = "Jump"
+    longJumpButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    longJumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    longJumpButton.BackgroundTransparency = 0.5
+
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(1, 0)
+    uiCorner.Parent = longJumpButton
+
+    longJumpButton.Draggable = true
+    longJumpButton.Active = true
+
+    longJumpButton.MouseButton1Click:Connect(function()
+        if enableLongJump then
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local tweenService = game:GetService("TweenService")
+                    local info = TweenInfo.new(0.2, Enum.EasingStyle.Linear)
+                    local goal = {CFrame = rootPart.CFrame * CFrame.new(0, 50, 0)}
+                    local tween = tweenService:Create(rootPart, info, goal)
+                    tween:Play()
+                end
+            end
+        end
+    end)
+
+    longJumpButton.Parent = screenGui
+end
+
+local function createScytheDashButton()
+    if game.CoreGui:FindFirstChild("ScytheDashGui") then
+        return
+    end
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ScytheDashGui"
+    screenGui.Parent = game.CoreGui
+
+    local scytheDashButton = Instance.new("TextButton")
+    scytheDashButton.Size = UDim2.new(0, 50, 0, 50)
+    scytheDashButton.Position = UDim2.new(0, 10, 0.5, -25)
+    scytheDashButton.Text = "Dash"
+    scytheDashButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    scytheDashButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    scytheDashButton.BackgroundTransparency = 0.5
+
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(1, 0)
+    uiCorner.Parent = scytheDashButton
+
+    scytheDashButton.Draggable = true
+    scytheDashButton.Active = true
+
+    local function dash()
+        if enableScytheDash then
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            if character then
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                local humanoid = character:FindFirstChild("Humanoid")
+                if rootPart and humanoid then
+                    local camera = workspace.CurrentCamera
+                    local lookVector = camera.CFrame.LookVector
+                    local dashDirection = lookVector.Unit * 30 -- Ensure the lookVector is normalized
+                    local tweenService = game:GetService("TweenService")
+                    local info = TweenInfo.new(0.2, Enum.EasingStyle.Linear)
+                    local goal = {CFrame = rootPart.CFrame + dashDirection}
+                    local tween = tweenService:Create(rootPart, info, goal)
+                    tween:Play()
+                end
+            end
+        end
+    end
+
+    scytheDashButton.MouseButton1Click:Connect(dash)
+
+    scytheDashButton.Parent = screenGui
+end
+
+local function enableClickTeleportFunction()
+    local player = game.Players.LocalPlayer
+    local mouse = player:GetMouse()
+    
+    mouse.Button1Down:Connect(function()
+        if enableClickTeleport then
+            local character = player.Character or player.CharacterAdded:Wait()
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                rootPart.CFrame = CFrame.new(mouse.Hit.p + Vector3.new(0, 3, 0))
+            end
+        end
+    end)
+end
+
+PlayerTab:CreateToggle({
+    Name = "Fake Scythe Dash",
+    Info = {
+        Title = 'Enable Fake Scythe Dash',
+        Image = '12735851647',
+        Description = 'Lets You Dash it looks like the Scythe Dash',
+    },
+    CurrentValue = false,
+    Flag = "EnableScytheDash", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        enableScytheDash = Value
+    end,
+})
+
+PlayerTab:CreateToggle({
+    Name = "Show Fake Scythe Dash Button",
+    Info = {
+        Title = 'Show Fake Scythe Dash Button',
+        Image = '12735851647',
+        Description = 'Shows the Fake Scythe Dash button Recommend Using This For Mobile',
+    },
+    CurrentValue = false,
+    Flag = "ShowScytheDashButton", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        if Value then
+            createScytheDashButton()
+        else
+            local gui = game.CoreGui:FindFirstChild("ScytheDashGui")
+            if gui then
+                gui:Destroy()
+            end
+        end
+        print(Value)
+    end,
+})
+
+PlayerTab:CreateKeybind({
+    Name = "Fake Scythe Dash Keybind",
+    CurrentKeybind = "S",
+    HoldToInteract = false,
+    Flag = "ScytheDashKeybind",
+    Callback = function(Keybind)
+        if enableScytheDash then
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            if character then
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                local humanoid = character:FindFirstChild("Humanoid")
+                if rootPart and humanoid then
+                    local camera = workspace.CurrentCamera
+                    local lookVector = camera.CFrame.LookVector
+                    local dashDirection = lookVector.Unit * 30 -- Ensure the lookVector is normalized
+                    local tweenService = game:GetService("TweenService")
+                    local info = TweenInfo.new(0.2, Enum.EasingStyle.Linear)
+                    local goal = {CFrame = rootPart.CFrame + dashDirection}
+                    local tween = tweenService:Create(rootPart, info, goal)
+                    tween:Play()
+                end
+            end
+        end
+    end,
+})
+
+PlayerTab:CreateSpacing(nil,10)
+
+PlayerTab:CreateToggle({
+    Name = "Long Jump",
+    Info = {
+        Title = 'Long Jump',
+        Image = '12735851647',
+        Description = 'Lets You long jump',
+    },
+    CurrentValue = false,
+    Flag = "EnableLongJump", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        enableLongJump = Value
+    end,
+})
+
+PlayerTab:CreateToggle({
+    Name = "Show Long Jump Button",
+    Info = {
+        Title = 'Show Long Jump Button',
+        Image = '12735851647',
+        Description = 'Shows the Long Jump button Recommend using this for mobile',
+    },
+    CurrentValue = false,
+    Flag = "ShowLongJumpButton", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        if Value then
+            createLongJumpButton()
+        else
+            local gui = game.CoreGui:FindFirstChild("LongJumpGui")
+            if gui then
+                gui:Destroy()
+            end
+        end
+        print(Value)
+    end,
+})
+
+PlayerTab:CreateKeybind({
+    Name = "Long Jump Keybind",
+    CurrentKeybind = "L",
+    HoldToInteract = false,
+    Flag = "LongJumpKeybind",
+    Callback = function(Keybind)
+        if enableLongJump then
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local tweenService = game:GetService("TweenService")
+                    local info = TweenInfo.new(0.2, Enum.EasingStyle.Linear)
+                    local goal = {CFrame = rootPart.CFrame * CFrame.new(0, 50, 0)}
+                    local tween = tweenService:Create(rootPart, info, goal)
+                    tween:Play()
+                end
+            end
+        end
+    end,
+})
+
+PlayerTab:CreateToggle({
+    Name = "Click Teleport",
+    Info = {
+        Title = 'Click Teleport',
+        Image = '12735851647',
+        Description = 'Lets You Teleport Where You Click',
+    },
+    CurrentValue = false,
+    Flag = "EnableClickTeleport", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        enableClickTeleport = Value
+        if enableClickTeleport then
+            enableClickTeleportFunction()
+        end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    Name = "WalkSpeed",
+    Range = {0, 500},
+    Increment = 1,
+    Suffix = "Speed",
+    CurrentValue = 16,
+    Flag = "WalkSpeedSlider",
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = Value
+        end
+    end,
+})
+
+PlayerTab:CreateSlider({
+    Name = "JumpPower",
+    Range = {16, 500},
+    Increment = 1,
+    Suffix = "Power",
+    CurrentValue = 50,
+    Flag = "JumpPowerSlider",
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.JumpPower = Value
+        end
+    end,
+})
 
 print("Script loaded successfully")
