@@ -580,11 +580,11 @@ local function enableClickTeleportFunction()
 end
 
 PlayerTab:CreateToggle({
-    Name = "Fake Scythe Dash",
+    Name = "Enable Fake Scythe Dash",
     Info = {
         Title = 'Enable Fake Scythe Dash',
         Image = '12735851647',
-        Description = 'Lets You Dash it looks like the Scythe Dash',
+        Description = 'Enables the Fake Scythe Dash action',
     },
     CurrentValue = false,
     Flag = "EnableScytheDash", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
@@ -598,7 +598,7 @@ PlayerTab:CreateToggle({
     Info = {
         Title = 'Show Fake Scythe Dash Button',
         Image = '12735851647',
-        Description = 'Shows the Fake Scythe Dash button Recommend Using This For Mobile',
+        Description = 'Shows the Fake Scythe Dash button',
     },
     CurrentValue = false,
     Flag = "ShowScytheDashButton", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
@@ -617,7 +617,7 @@ PlayerTab:CreateToggle({
 
 PlayerTab:CreateKeybind({
     Name = "Fake Scythe Dash Keybind",
-    CurrentKeybind = "S",
+    CurrentKeybind = "E",
     HoldToInteract = false,
     Flag = "ScytheDashKeybind",
     Callback = function(Keybind)
@@ -645,11 +645,11 @@ PlayerTab:CreateKeybind({
 PlayerTab:CreateSpacing(nil,10)
 
 PlayerTab:CreateToggle({
-    Name = "Long Jump",
+    Name = "Enable Long Jump",
     Info = {
-        Title = 'Long Jump',
+        Title = 'Enable Long Jump',
         Image = '12735851647',
-        Description = 'Lets You long jump',
+        Description = 'Enables the Long Jump action',
     },
     CurrentValue = false,
     Flag = "EnableLongJump", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
@@ -663,7 +663,7 @@ PlayerTab:CreateToggle({
     Info = {
         Title = 'Show Long Jump Button',
         Image = '12735851647',
-        Description = 'Shows the Long Jump button Recommend using this for mobile',
+        Description = 'Shows the Long Jump button',
     },
     CurrentValue = false,
     Flag = "ShowLongJumpButton", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
@@ -682,7 +682,7 @@ PlayerTab:CreateToggle({
 
 PlayerTab:CreateKeybind({
     Name = "Long Jump Keybind",
-    CurrentKeybind = "L",
+    CurrentKeybind = "Q",
     HoldToInteract = false,
     Flag = "LongJumpKeybind",
     Callback = function(Keybind)
@@ -705,11 +705,11 @@ PlayerTab:CreateKeybind({
 })
 
 PlayerTab:CreateToggle({
-    Name = "Click Teleport",
+    Name = "Enable Click Teleport",
     Info = {
-        Title = 'Click Teleport',
+        Title = 'Enable Click Teleport',
         Image = '12735851647',
-        Description = 'Lets You Teleport Where You Click',
+        Description = 'Enables the Click Teleport action',
     },
     CurrentValue = false,
     Flag = "EnableClickTeleport", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
@@ -754,13 +754,5 @@ PlayerTab:CreateSlider({
         end
     end,
 })
-local NotificationHolder = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Module.Lua"))()
-local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Client.Lua"))()
-
-Notification:Notify(
-    {Title = "Opening Tabs", Description = "Click The Button On the Top Left To Open Tabs"},
-    {OutlineColor = Color3.fromRGB(80, 80, 80),Time = 9, Type = "option"},
-    {Image = "http://www.roblox.com/asset/?id=6023426923", ImageColor = Color3.fromRGB(255, 84, 84), Callback = function(State) print(tostring(State)) end}
-)
 
 print("Script loaded successfully")
