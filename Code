@@ -232,7 +232,7 @@ local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/
 
 Notification:Notify(
     {Title = "Warning", Description = "If Your Seeing Thid The Script Did Not Load Properly"},
-    {OutlineColor = Color3.fromRGB(80, 80, 80),Time = 5, Type = "option"},
+    {OutlineColor = Color3.fromRGB(80, 80, 80),Time = 10, Type = "option"},
     {Image = "http://www.roblox.com/asset/?id=6023426923", ImageColor = Color3.fromRGB(255, 84, 84), Callback = function(State) print(tostring(State)) end}
 )
 
@@ -302,20 +302,6 @@ Tab:CreateKeybind({
 -- Initialize FOV circle
 createFovCircle()
 print("testing4")
-Tab:CreateColorPicker({
-    Name = "Aimbot Fov Color",
-    Color = Color3.fromRGB(2,255,255),
-    Info = {
-        Title = 'Change The Aimbot Fov Color',
-        Description = 'Adjusts the color of the Aimbot Fov circle.',
-    },
-    Default = fovCircleColor,
-    Flag = "FovCircleColorPicker",
-    Callback = function(Value)
-        fovCircleColor = Value
-        updateFovCircle()
-    end,
-})
 
 Tab:CreateSpacing(nil,10)
 print("Script didn't load successfully")
