@@ -691,6 +691,7 @@ MiscTab:CreateSlider({
     end,
 })
 
+
 game:GetService("RunService").RenderStepped:Connect(function()
     if rainbowEnabled then
         updateRainbowEffect()
