@@ -437,6 +437,7 @@ local mapActions = {
     end,
 }
 
+-- Create the toggle for Auto Vote Map
 Tab:CreateToggle({
     Name = "Auto Vote Map",
     Info = {
@@ -450,26 +451,16 @@ Tab:CreateToggle({
         AutoVoteMap = Value
         if AutoVoteMap then
             print("Auto Vote Map enabled")
-            randomExecutor = game:GetService("RunService").Heartbeat:Connect(function()
-                while AutoVoteMap do
-                    if selectedOption and mapActions[selectedOption] then
-                        mapActions[selectedOption]()
-                    end
-                    wait(2)
-                end
-            end)
         else
             print("Auto Vote Map disabled")
-            if randomExecutor then
-                randomExecutor:Disconnect()
-            end
         end
     end,
 })
 
+-- Create the dropdown for map selection
 Tab:CreateDropdown({
     Name = "Map Selector",
-    Options = {"Onyx", "Construction", 'Shooting Range', 'Docks', 'Crossroads', 'Station', 'Big Crossroads', 'Backrooms', 'Arena'},
+    Options = {"Onyx", "Construction", "Shooting Range", "Docks", "Crossroads", "Station", "Big Crossroads", "Backrooms", "Arena"},
     CurrentOption = "Arena",
     MultiSelection = false,
     Flag = "MapDropDown",
@@ -478,6 +469,7 @@ Tab:CreateDropdown({
         print("Selected map: " .. Option)
     end,
 })
+
 
 
 local VisualsTab = Window:CreateTab("Visuals Tab", 4483362458) -- Title, Image
@@ -661,6 +653,7 @@ VisualsTab:CreateColorPicker({
         end
     end
 })
+
 
 VisualsTab:CreateToggle({
     Name = "Health Bar Esp",
