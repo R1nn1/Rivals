@@ -227,6 +227,16 @@ Tab:CreateSlider({
     end,
 })
 
+local NotificationHolder = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Module.Lua"))()
+local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Client.Lua"))()
+
+Notification:Notify(
+    {Title = "Warning", Description = "If Your Seeing Thid The Script Did Not Load Properly"},
+    {OutlineColor = Color3.fromRGB(80, 80, 80),Time = 5, Type = "option"},
+    {Image = "http://www.roblox.com/asset/?id=6023426923", ImageColor = Color3.fromRGB(255, 84, 84), Callback = function(State) print(tostring(State)) end}
+)
+
+print("testing1")
 Tab:CreateSlider({
     Name = "Aimbot Fov Thickness",
     Info = {
@@ -243,6 +253,8 @@ Tab:CreateSlider({
         updateFovCircle()
     end,
 })
+
+print("testing2")
 
 Tab:CreateDropdown({
     Name = "Aimbot Aim Part",
@@ -274,6 +286,8 @@ Tab:CreateSlider({
     end,
 })
 
+print("testing 3")
+
 Tab:CreateKeybind({
     Name = "Aimbot Toggle Keybind",
     CurrentKeybind = "Q",
@@ -287,7 +301,7 @@ Tab:CreateKeybind({
 
 -- Initialize FOV circle
 createFovCircle()
-
+print("testing4")
 Tab:CreateColorPicker({
     Name = "Aimbot Fov Color",
     Color = Color3.fromRGB(2,255,255),
