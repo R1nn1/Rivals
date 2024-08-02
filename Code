@@ -471,7 +471,7 @@ local healthTexts = {}
 local connections = {}
 
 local function createBox(player)
-    if player == game.Players.LocalPlayer then return end
+    if player == game:GetService("Players").LocalPlayer then return end
 
     local box = Drawing.new("Square")
     box.Thickness = 1
@@ -579,7 +579,7 @@ local function updateBoxes()
 
                 if distances[player] then
                     distances[player].Visible = true
-                    local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+                    local distance = (game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
                     distances[player].Text = string.format("%.0f studs", distance)
                     distances[player].Position = Vector2.new(vector.X, vector.Y + 20 * scaleFactor)
                 end
@@ -666,12 +666,12 @@ end
 
 local function toggleBoxESP(enabled)
     if enabled then
-        for _, player in pairs(game.Players:GetPlayers()) do
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
             createBox(player)
         end
         connections.renderStepped = game:GetService("RunService").RenderStepped:Connect(updateBoxes)
     else
-        for _, player in pairs(game.Players:GetPlayers()) do
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
             removeBox(player)
         end
         if connections.renderStepped then
@@ -683,7 +683,7 @@ end
 
 local function toggleNameESP(enabled)
     nameEspEnabled = enabled
-    for _, player in pairs(game.Players:GetPlayers()) do
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
         if enabled then
             if not names[player] then
                 local name = Drawing.new("Text")
@@ -706,7 +706,7 @@ end
 
 local function toggleDistanceESP(enabled)
     distanceEspEnabled = enabled
-    for _, player in pairs(game.Players:GetPlayers()) do
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
         if enabled then
             if not distances[player] then
                 local distance = Drawing.new("Text")
@@ -728,7 +728,7 @@ end
 
 local function toggleHealthBarESP(enabled)
     healthBarEspEnabled = enabled
-    for _, player in pairs(game.Players:GetPlayers()) do
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
         if enabled then
             if not healthBars[player] then
                 local healthBar = Drawing.new("Square")
@@ -764,7 +764,7 @@ end
 
 local function toggleHealthTextESP(enabled)
     healthTextEspEnabled = enabled
-    for _, player in pairs(game.Players:GetPlayers()) do
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
         if enabled then
             if not healthTexts[player] then
                 local healthText = Drawing.new("Text")
@@ -823,6 +823,8 @@ EspTab:CreateToggle({
         toggleHealthTextESP(value)
     end
 })
+
+
 
 local PlayerTab = Window:CreateTab("Players Tab", 4483362458) -- Title, Image
 
