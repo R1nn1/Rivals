@@ -568,7 +568,7 @@ local function updateBoxes()
             local vector, onScreen = game.Workspace.CurrentCamera:WorldToViewportPoint(hrp.Position)
             if onScreen then
                 box.Visible = true
-                local scaleFactor = 0.5 / (vector.Z / 100) -- Reduced scale factor to make the box smaller
+                local scaleFactor = 0.5 / (vector.Z / 100)
                 box.Size = Vector2.new(20 * scaleFactor, 35 * scaleFactor)
                 box.Position = Vector2.new(vector.X - 10 * scaleFactor, vector.Y - 17.5 * scaleFactor)
 
@@ -664,10 +664,25 @@ local function updateBoxes()
     end
 end
 
+local function playerAdded(player)
+    player.CharacterAdded:Connect(function()
+        createBox(player)
+    end)
+
+    player.CharacterRemoving:Connect(function()
+        removeBox(player)
+    end)
+
+    -- Create ESP for the character if it exists
+    if player.Character then
+        createBox(player)
+    end
+end
+
 local function toggleBoxESP(enabled)
     if enabled then
         for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            createBox(player)
+            playerAdded(player)
         end
         connections.renderStepped = game:GetService("RunService").RenderStepped:Connect(updateBoxes)
     else
@@ -784,6 +799,9 @@ local function toggleHealthTextESP(enabled)
     end
 end
 
+game:GetService("Players").PlayerAdded:Connect(playerAdded)
+game:GetService("Players").PlayerRemoving:Connect(removeBox)
+
 EspTab:CreateToggle({
     Name = "Box Esp",
     Default = false,
@@ -823,7 +841,6 @@ EspTab:CreateToggle({
         toggleHealthTextESP(value)
     end
 })
-
 
 
 local PlayerTab = Window:CreateTab("Players Tab", 4483362458) -- Title, Image
