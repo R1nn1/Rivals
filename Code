@@ -842,6 +842,66 @@ EspTab:CreateToggle({
     end
 })
 
+local MiscTab = Window:CreateTab("Misc Tab", 4483362458) -- Title, Image
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local function rotateMouse(rotationSpeed)
+    local playerName = Players.LocalPlayer.Name
+    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+    local mainGui = playerGui:WaitForChild("MainGui")
+    local mainFrame = mainGui:WaitForChild("MainFrame")
+    local itemInterfaces = mainFrame:WaitForChild("ItemInterfaces")
+
+    for _, item in pairs(itemInterfaces:GetChildren()) do
+        if item.Name:find(playerName) then
+            local mouse = item:FindFirstChild("Mouse")
+            if mouse then
+                RunService.RenderStepped:Connect(function()
+                    mouse.Rotation = mouse.Rotation + rotationSpeed
+                end)
+            end
+        end
+    end
+end
+
+local rotationSpeed = 1
+local rotationConnection
+
+MiscTab:CreateToggle({
+    Name = "Rotating Crosshair",
+    Info = {
+        Title = 'Makes Your Crosshair Rotate',
+        Image = '12735851647',
+        Description = 'so cool',
+    },
+    CurrentValue = false,
+    Flag = "CrossHairRotate", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        if Value then
+            rotationConnection = RunService.RenderStepped:Connect(function()
+                rotateMouse(rotationSpeed)
+            end)
+        else
+            if rotationConnection then
+                rotationConnection:Disconnect()
+            end
+        end
+    end,
+})
+
+MiscTab:CreateSlider({
+    Name = "Rotation Speed",
+    Range = {0, 10},
+    Increment = 0.1,
+    Suffix = "Speed",
+    CurrentValue = 1,
+    Flag = "RotateSpeed",
+    Callback = function(Value)
+        rotationSpeed = Value
+    end,
+})
 
 local PlayerTab = Window:CreateTab("Players Tab", 4483362458) -- Title, Image
 
