@@ -845,7 +845,7 @@ EspTab:CreateToggle({
 
 local PlayerTab = Window:CreateTab("Players Tab", 4483362458) -- Title, Image
 
-PlayerTab:CreateSpacing(nil,10)
+PlayerTab:CreateSpacing(nil, 10)
 
 local enableLongJump = false
 local enableScytheDash = false
@@ -877,7 +877,7 @@ local function createLongJumpButton()
 
     longJumpButton.MouseButton1Click:Connect(function()
         if enableLongJump then
-            local player = game.Players.LocalPlayer
+            local player = game:GetService("Players").LocalPlayer
             local character = player.Character or player.CharacterAdded:Wait()
             local humanoid = character:FindFirstChild("Humanoid")
             if humanoid then
@@ -922,7 +922,7 @@ local function createScytheDashButton()
 
     local function dash()
         if enableScytheDash then
-            local player = game.Players.LocalPlayer
+            local player = game:GetService("Players").LocalPlayer
             local character = player.Character or player.CharacterAdded:Wait()
             if character then
                 local rootPart = character:FindFirstChild("HumanoidRootPart")
@@ -947,7 +947,7 @@ local function createScytheDashButton()
 end
 
 local function enableClickTeleportFunction()
-    local player = game.Players.LocalPlayer
+    local player = game:GetService("Players").LocalPlayer
     local mouse = player:GetMouse()
     
     mouse.Button1Down:Connect(function()
@@ -1004,7 +1004,7 @@ PlayerTab:CreateKeybind({
     Flag = "ScytheDashKeybind",
     Callback = function(Keybind)
         if enableScytheDash then
-            local player = game.Players.LocalPlayer
+            local player = game:GetService("Players").LocalPlayer
             local character = player.Character or player.CharacterAdded:Wait()
             if character then
                 local rootPart = character:FindFirstChild("HumanoidRootPart")
@@ -1024,7 +1024,7 @@ PlayerTab:CreateKeybind({
     end,
 })
 
-PlayerTab:CreateSpacing(nil,10)
+PlayerTab:CreateSpacing(nil, 10)
 
 PlayerTab:CreateToggle({
     Name = "Enable Long Jump",
@@ -1069,7 +1069,7 @@ PlayerTab:CreateKeybind({
     Flag = "LongJumpKeybind",
     Callback = function(Keybind)
         if enableLongJump then
-            local player = game.Players.LocalPlayer
+            local player = game:GetService("Players").LocalPlayer
             local character = player.Character or player.CharacterAdded:Wait()
             local humanoid = character:FindFirstChild("Humanoid")
             if humanoid then
@@ -1111,7 +1111,7 @@ PlayerTab:CreateSlider({
     CurrentValue = 16,
     Flag = "WalkSpeedSlider",
     Callback = function(Value)
-        local player = game.Players.LocalPlayer
+        local player = game:GetService("Players").LocalPlayer
         local character = player.Character or player.CharacterAdded:Wait()
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
@@ -1128,7 +1128,7 @@ PlayerTab:CreateSlider({
     CurrentValue = 50,
     Flag = "JumpPowerSlider",
     Callback = function(Value)
-        local player = game.Players.LocalPlayer
+        local player = game:GetService("Players").LocalPlayer
         local character = player.Character or player.CharacterAdded:Wait()
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
@@ -1136,5 +1136,6 @@ PlayerTab:CreateSlider({
         end
     end,
 })
+
 
 print("Script loaded successfully")
