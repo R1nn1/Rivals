@@ -1197,5 +1197,31 @@ PlayerTab:CreateSlider({
     end,
 })
 
+MiscTab:CreateButton({
+    Name = "Reduce Lag",
+    Info = {
+        Title = 'Reduce Lag',
+        Description = 'reduces lag by changing some stuff',
+    },
+    Interact = 'Changable',
+    Callback = function()
+        reduceLag()
+        print('Lag reduction applied')
+    end,
+})
+
+function reduceLag()
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    Workspace.Terrain.WaterWaveSize = 0
+    Workspace.Terrain.WaterWaveSpeed = 0
+    Workspace.Terrain.WaterReflectance = 0
+    Workspace.Terrain.WaterTransparency = 0
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") or v:IsA("WedgePart") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
+            v.Material = Enum.Material.Plastic
+            v.Reflectance = 0
+        end
+    end
+end
 
 print("Script loaded successfully")
