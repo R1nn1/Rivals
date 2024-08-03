@@ -295,7 +295,7 @@ createFovCircle()
 print("testing4")
 
 Tab:CreateSpacing(nil,10)
-local Paragraph = Tab:CreateParagraph({Title = "Wishlisting", Content = "The Aimbot Won't Lock On to Wishlisted users you have to put their username put a comma to show multiple users it can also be a short form of their username"})
+local Paragraph = Tab:CreateParagraph({Title = "Wishlisting", Content = "The Aimbot Wont Lock On to Wishlisted users you have to put their username put a comma to show multiple users it can also be a short form of their username"})
 
 Tab:CreateToggle({
     Name = "Wishlist Friends",
