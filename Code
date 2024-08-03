@@ -1265,7 +1265,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 -- Create the FPS counter toggle
-Tab:CreateToggle({
+MiscTab:CreateToggle({
     Name = "FPS Counter",
     Info = {
         Title = 'FPS Counter',
@@ -1284,7 +1284,7 @@ Tab:CreateToggle({
 })
 
 -- Create the ping counter toggle
-Tab:CreateToggle({
+MiscTab:CreateToggle({
     Name = "Ping Counter",
     Info = {
         Title = 'Ping Counter',
