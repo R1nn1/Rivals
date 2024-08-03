@@ -1266,7 +1266,7 @@ local RunService = game:GetService("RunService")
 
 -- Create the FPS counter toggle
 MiscTab:CreateToggle({
-    Name = "FPS Counter",
+    Name = "Fps Counter",
     Info = {
         Title = 'FPS Counter',
         Image = '12735851647',
