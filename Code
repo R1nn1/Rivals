@@ -1261,5 +1261,107 @@ ArrayField:Notify({
  },
 })
 
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- Create the FPS counter toggle
+Tab:CreateToggle({
+    Name = "FPS Counter",
+    Info = {
+        Title = 'FPS Counter',
+        Image = '12735851647',
+        Description = 'Shows A Gui That Will Show Your Fps',
+    },
+    CurrentValue = false,
+    Flag = "FPSCounterToggle",
+    Callback = function(Value)
+        if Value then
+            createFPSCounter()
+        else
+            removeFPSCounter()
+        end
+    end,
+})
+
+-- Create the ping counter toggle
+Tab:CreateToggle({
+    Name = "Ping Counter",
+    Info = {
+        Title = 'Ping Counter',
+        Image = '12735851647',
+        Description = 'Makes A Gui That Will Show Your Ping',
+    },
+    CurrentValue = false,
+    Flag = "PingCounterToggle",
+    Callback = function(Value)
+        if Value then
+            createPingCounter()
+        else
+            removePingCounter()
+        end
+    end,
+})
+
+-- Function to create FPS counter
+function createFPSCounter()
+    local screenGui = Instance.new("ScreenGui", game.CoreGui)
+    screenGui.Name = "FPSCounter"
+    screenGui.ResetOnSpawn = false
+
+    local textLabel = Instance.new("TextLabel", screenGui)
+    textLabel.Size = UDim2.new(0, 30, 0, 30)
+    textLabel.Position = UDim2.new(0, 10, 0, 10)
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.BackgroundTransparency = 0.5
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Font = Enum.Font.SourceSans
+    textLabel.TextSize = 14
+    textLabel.Text = "FPS: 0"
+    textLabel.Active = true
+    textLabel.Draggable = true
+
+    RunService.RenderStepped:Connect(function(deltaTime)
+        textLabel.Text = string.format("FPS: %d", math.floor(1 / deltaTime))
+    end)
+end
+
+-- Function to remove FPS counter
+function removeFPSCounter()
+    if game.CoreGui:FindFirstChild("FPSCounter") then
+        game.CoreGui.FPSCounter:Destroy()
+    end
+end
+
+-- Function to create Ping counter
+function createPingCounter()
+    local screenGui = Instance.new("ScreenGui", game.CoreGui)
+    screenGui.Name = "PingCounter"
+    screenGui.ResetOnSpawn = false
+
+    local textLabel = Instance.new("TextLabel", screenGui)
+    textLabel.Size = UDim2.new(0, 30, 0, 30)
+    textLabel.Position = UDim2.new(0, 10, 0, 70)
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.BackgroundTransparency = 0.5
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Font = Enum.Font.SourceSans
+    textLabel.TextSize = 14
+    textLabel.Text = "Ping: 0"
+    textLabel.Active = true
+    textLabel.Draggable = true
+
+    RunService.Heartbeat:Connect(function()
+        textLabel.Text = string.format("Ping: %d ms", game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+    end)
+end
+
+-- Function to remove Ping counter
+function removePingCounter()
+    if game.CoreGui:FindFirstChild("PingCounter") then
+        game.CoreGui.PingCounter:Destroy()
+    end
+end
+
+
 print("Script loaded successfully")
 ArrayField:LoadConfiguration()
