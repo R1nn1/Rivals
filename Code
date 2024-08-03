@@ -1246,6 +1246,20 @@ MiscTab:CreateButton({
 })
 
 
+ArrayField:Notify({
+   Title = "Aimbot Wishlisting",
+   Content = "The Aimbot Wont Lock On To Wishlisted Users put a comma to show different users",
+   Duration = 9,
+   Image = 4483362458,
+   Actions = { -- Notification Buttons
+      Ignore = {
+         Name = "Okay!",
+         Callback = function()
+         print("The user tapped Okay!")
+      end
+   },
+ },
+})
 
 print("Script loaded successfully")
 ArrayField:LoadConfiguration()
