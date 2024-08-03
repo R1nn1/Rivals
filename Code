@@ -112,7 +112,7 @@ local function getClosestPlayer()
             local hrp = player.Character.HumanoidRootPart
             local humanoid = player.Character.Humanoid
 
-            if humanoid.Health > 0 then
+            if humanoid.Health > 0 and not isUserWishlisted(player.Name) then
                 local screenPoint = camera:WorldToScreenPoint(hrp.Position)
                 local distanceFromCenter = (Vector2.new(screenPoint.X, screenPoint.Y) - (fovFollowMouse and UserInputService:GetMouseLocation() or Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2))).Magnitude
 
@@ -217,7 +217,7 @@ Tab:CreateSlider({
         Description = 'Lets you change the transparency of the aimbot Fov',
     },
     Range = {0, 1},
-    Increment = 0.1,
+    Increment = 0.01,
     Suffix = "",
     CurrentValue = fovTransparency,
     Flag = "AimbotFovTransparencySlider",
@@ -235,7 +235,7 @@ Tab:CreateSlider({
         Description = 'Lets you change the thickness of the aimbot Fov',
     },
     Range = {1, 10},
-    Increment = 0.1,
+    Increment = 0.01,
     Suffix = "",
     CurrentValue = fovThickness,
     Flag = "AimbotFovThicknessSlider",
@@ -268,7 +268,7 @@ Tab:CreateSlider({
         Description = 'Lets you change the range at which the aimbot locks on to targets',
     },
     Range = {100, 10000},
-    Increment = 100,
+    Increment = 1,
     Suffix = "Studs",
     CurrentValue = lockOnRange,
     Flag = "AimbotLockOnRangeSlider",
@@ -295,26 +295,29 @@ createFovCircle()
 print("testing4")
 
 Tab:CreateSpacing(nil,10)
-print("Script didn't load successfully")
 
 Tab:CreateToggle({
-    Name = "Wishlist Friends Only",
+    Name = "Wishlist Friends",
     Info = {
-        Title = 'Wishlist Friends Only',
-        Description = 'Toggle to only wishlist friends.',
+        Title = 'Wishlist Friends',
+        Description = 'Toggle this on to wishlist friends.',
     },
     CurrentValue = wishlistFriends,
     Flag = "WishlistFriendsToggle",
     Callback = function(Value)
         wishlistFriends = Value
         if wishlistFriends then
+            wishlistedUsers = {}
             local success, result = pcall(function()
                 return players:GetFriendsAsync(players.LocalPlayer.UserId)
             end)
             if success then
-                wishlistedUsers = {}
                 for _, friend in pairs(result) do
-                    table.insert(wishlistedUsers, friend.Username)
+                    for _, player in pairs(players:GetPlayers()) do
+                        if player.Name == friend.Username then
+                            table.insert(wishlistedUsers, friend.Username)
+                        end
+                    end
                 end
             else
                 print("Error fetching friends:", result)
@@ -372,6 +375,7 @@ Tab:CreateInput({
         end
     end,
 })
+
 
 Tab:CreateSpacing(nil, 10)
 
