@@ -1225,3 +1225,4 @@ function reduceLag()
 end
 
 print("Script loaded successfully")
+ArrayField:LoadConfiguration()
