@@ -1197,32 +1197,51 @@ PlayerTab:CreateSlider({
     end,
 })
 
-MiscTab:CreateButton({
-    Name = "Reduce Lag",
-    Info = {
-        Title = 'Reduce Lag',
-        Description = 'reduces lag by changing some stuff',
-    },
-    Interact = 'Changable',
-    Callback = function()
-        reduceLag()
-        print('Lag reduction applied')
-    end,
-})
-
 function reduceLag()
+    -- Lower rendering quality level
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    
+    -- Terrain settings
     Workspace.Terrain.WaterWaveSize = 0
     Workspace.Terrain.WaterWaveSpeed = 0
     Workspace.Terrain.WaterReflectance = 0
     Workspace.Terrain.WaterTransparency = 0
+    
+    -- Adjusting properties of parts
     for _, v in pairs(Workspace:GetDescendants()) do
         if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") or v:IsA("WedgePart") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
             v.Material = Enum.Material.Plastic
             v.Reflectance = 0
+            v.CastShadow = false  -- Disable shadows
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = false  -- Disable particle emitters
         end
     end
+    
+    -- Lower graphics settings
+    game.Lighting.GlobalShadows = false
+    game.Lighting.FogEnd = 100000  -- Max fog distance
+    
+    -- Reduce render distance
+    game.Players.LocalPlayer.CameraMaxZoomDistance = 50  -- Example value, adjust as needed
+    
+    print('Lag')
 end
+
+-- Button setup
+MiscTab:CreateButton({
+    Name = "Reduce Lag",
+    Info = {
+        Title = 'Less Lag',
+        Description = 'reduces lag in the game.',
+    },
+    Interact = 'Changable',
+    Callback = function()
+        reduceLag()
+    end,
+})
+
+
 
 print("Script loaded successfully")
 ArrayField:LoadConfiguration()
