@@ -1364,8 +1364,6 @@ end
 
 local Players = game:FindFirstChildOfClass("Players") or game:GetService("Players")
 
-local MiscTab = Window:CreateTab("Misc Tab", 4483362458) -- Title, Image
-
 local staffUserIds = {
     15941965, 20349956, 130576147, 1089013506, 361635460, 17850664, 478882362,
     133321104, 583533194, 113947873, 171835162, 1945168488, 754154414,
