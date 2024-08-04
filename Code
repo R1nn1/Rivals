@@ -1309,7 +1309,7 @@ function createFPSCounter()
     screenGui.ResetOnSpawn = false
 
     local textLabel = Instance.new("TextLabel", screenGui)
-    textLabel.Size = UDim2.new(0, 30, 0, 30)
+    textLabel.Size = UDim2.new(0, 40, 0, 40)
     textLabel.Position = UDim2.new(0, 10, 0, 10)
     textLabel.TextColor3 = Color3.new(1, 1, 1)
     textLabel.BackgroundTransparency = 0.5
@@ -1339,7 +1339,7 @@ function createPingCounter()
     screenGui.ResetOnSpawn = false
 
     local textLabel = Instance.new("TextLabel", screenGui)
-    textLabel.Size = UDim2.new(0, 30, 0, 30)
+    textLabel.Size = UDim2.new(0, 40, 0, 40)
     textLabel.Position = UDim2.new(0, 10, 0, 70)
     textLabel.TextColor3 = Color3.new(1, 1, 1)
     textLabel.BackgroundTransparency = 0.5
