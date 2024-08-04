@@ -1362,6 +1362,149 @@ function removePingCounter()
     end
 end
 
+local Players = game:FindFirstChildOfClass("Players") or game:GetService("Players")
+
+local MiscTab = Window:CreateTab("Misc Tab", 4483362458) -- Title, Image
+
+local staffUserIds = {
+    15941965, 20349956, 130576147, 1089013506, 361635460, 17850664, 478882362,
+    133321104, 583533194, 113947873, 171835162, 1945168488, 754154414,
+    102231521, 581580645, 787266546
+}
+
+local function TeleportToDifferentServer()
+    local HttpService = game:GetService("HttpService")
+    local TeleportService = game:GetService("TeleportService")
+    local PlaceId = game.PlaceId
+
+    local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+    local serverList = {}
+
+    for _, server in ipairs(servers.data) do
+        if server.playing < server.maxPlayers and server.id ~= game.JobId then
+            table.insert(serverList, server.id)
+        end
+    end
+
+    if #serverList > 0 then
+        local serverId = serverList[math.random(1, #serverList)]
+        TeleportService:TeleportToPlaceInstance(PlaceId, serverId, Players.LocalPlayer)
+    else
+        print("No available servers to hop to.")
+    end
+end
+
+local function checkStaffInGame()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if table.find(staffUserIds, player.UserId) then
+            return true
+        end
+    end
+    return false
+end
+
+local function createStaffNotificationGui()
+    local ScreenGui = Instance.new("ScreenGui")
+    local Frame = Instance.new("Frame")
+    local Title = Instance.new("TextLabel")
+    local YesButton = Instance.new("TextButton")
+    local NoButton = Instance.new("TextButton")
+
+    ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    Frame.Size = UDim2.new(0, 200, 0, 100) -- Adjusted size
+    Frame.Position = UDim2.new(0, 10, 1, -110) -- Start at bottom left with 10px margin and 10px above the bottom
+    Frame.BackgroundColor3 = Color3.new(0, 0, 0) -- Black background
+    Frame.Parent = ScreenGui
+
+    Title.Size = UDim2.new(1, 0, 0.3, 0)
+    Title.Text = "A Staff/Dev is in your server. Would you like to server hop?"
+    Title.TextColor3 = Color3.new(1, 1, 1) -- White text
+    Title.TextScaled = true -- Text scaled
+    Title.Parent = Frame
+
+    YesButton.Size = UDim2.new(1, 0, 0.3, 0)
+    YesButton.Position = UDim2.new(0, 0, 0.3, 0)
+    YesButton.Text = "Yes"
+    YesButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2) -- Dark gray background
+    YesButton.TextColor3 = Color3.new(1, 1, 1) -- White text
+    YesButton.Parent = Frame
+    YesButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+        TeleportToDifferentServer()
+    end)
+
+    NoButton.Size = UDim2.new(1, 0, 0.3, 0)
+    NoButton.Position = UDim2.new(0, 0, 0.6, 0)
+    NoButton.Text = "No"
+    NoButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2) -- Dark gray background
+    NoButton.TextColor3 = Color3.new(1, 1, 1) -- White text
+    NoButton.Parent = Frame
+    NoButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+end
+
+local staffNotifyActive = false
+local autoHopActive = false
+
+MiscTab:CreateToggle({
+    Name = "Staff Notify",
+    Info = {
+        Title = 'Staff Notify',
+        Image = '12735851647',
+        Description = 'Notifies you when a staff joins your server and gives you options',
+    },
+    CurrentValue = false,
+    Flag = "NotifyWhenStaffJoin",
+    Callback = function(Value)
+        staffNotifyActive = Value
+        if Value then
+            while staffNotifyActive do
+                if checkStaffInGame() then
+                    createStaffNotificationGui()
+                    break
+                end
+                wait(5)
+            end
+        end
+    end,
+})
+
+MiscTab:CreateToggle({
+    Name = "Auto Server Hop When Staff Joins",
+    Info = {
+        Title = 'Auto Server Hop When Staff Joins',
+        Image = '12735851647',
+        Description = 'Automatically Joins A New Server When A Staff Joins. Dont Recommend This On',
+    },
+    CurrentValue = false,
+    Flag = "AutoHopWhenStaffJoin",
+    Callback = function(Value)
+        autoHopActive = Value
+        if Value then
+            while autoHopActive do
+                if checkStaffInGame() then
+                    TeleportToDifferentServer()
+                    break
+                end
+                wait(5)
+            end
+        end
+    end,
+})
+
+MiscTab:CreateButton({
+    Name = "Test Server Hop Notification",
+    Info = {
+        Title = 'Server Hop Test Button',
+        Description = 'This button will test the staff server hop notification GUI.',
+    },
+    Interact = 'Changable',
+    Callback = function()
+        createStaffNotificationGui()
+    end,
+})
 
 print("Script loaded successfully")
 ArrayField:LoadConfiguration()
