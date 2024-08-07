@@ -1496,7 +1496,7 @@ MiscTab:CreateButton({
     Name = "Test Staff Bs",
     Info = {
         Title = 'Test Staff Button',
-        Description = 'Tests The Staff Button Doesn't Make you server hop though',
+        Description = 'Tests The Staff Button Doesnt Make you server hop though',
     },
     Interact = 'Changable',
     Callback = function()
