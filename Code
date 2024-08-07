@@ -1492,17 +1492,6 @@ MiscTab:CreateToggle({
     end,
 })
 
-MiscTab:CreateButton({
-    Name = "Test Staff Bs",
-    Info = {
-        Title = 'Test Staff Button',
-        Description = 'Tests The Staff Button Doesnt Make you server hop though',
-    },
-    Interact = 'Changable',
-    Callback = function()
-        createStaffNotificationGui()
-    end,
-})
 local plr = game:GetService("Players")
 local Lp = plr.LocalPlayer
 local rs = game:GetService("RunService")
