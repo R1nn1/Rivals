@@ -1504,7 +1504,7 @@ local function serverHop()
     TeleportService:TeleportToPlaceInstance(game.PlaceId, randomServer.id, player)
 end
 
-Tab:CreateButton({
+MiscTab:CreateButton({
     Name = "Server Hop",
     Info = {
         Title = 'Server Hop',
@@ -1514,7 +1514,7 @@ Tab:CreateButton({
     Callback = serverHop,
 })
 
-Tab:CreateButton({
+MiscTab:CreateButton({
     Name = "Rejoin",
     Info = {
         Title = 'Rejoin',
