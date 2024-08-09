@@ -1493,5 +1493,42 @@ MiscTab:CreateToggle({
 })
 
 
+local function serverHop()
+    local HttpService = game:GetService("HttpService")
+    local TeleportService = game:GetService("TeleportService")
+    local player = game:GetService("Players").LocalPlayer
+
+    local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")).data
+    local randomServer = servers[math.random(1, #servers)]
+
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, randomServer.id, player)
+end
+
+Tab:CreateButton({
+    Name = "Server Hop",
+    Info = {
+        Title = 'Server Hop',
+        Description = 'makes you join a different Server',
+    },
+    Interact = 'Changable',
+    Callback = serverHop,
+})
+
+Tab:CreateButton({
+    Name = "Rejoin",
+    Info = {
+        Title = 'Rejoin',
+        Description = 'Makes You Rejoin The Current Server Your In',
+    },
+    Interact = 'Changable',
+    Callback = function()
+        local TeleportService = game:GetService("TeleportService")
+        local placeId = game.PlaceId
+        local jobId = game.JobId
+
+        TeleportService:TeleportToPlaceInstance(placeId, jobId)
+    end,
+})
+
 print("Script loaded successfully")
 ArrayField:LoadConfiguration()
