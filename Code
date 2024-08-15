@@ -1563,5 +1563,53 @@ WorldTab:CreateSlider({
     end,
 })
 
+local selectedOption = "Default" -- Default option
+
+WorldTab:CreateDropdown({
+    Name = "Sky Theme",
+    Options = {"Default", "Rinns Hub Sky"},
+    CurrentOption = "Default",
+    MultiSelection = false,
+    Flag = "SkyDrop",
+    Callback = function(Option)
+        selectedOption = Option
+        print(Option)
+    end,
+})
+
+WorldTab:CreateButton({
+    Name = "Apply Sky Theme",
+    Info = {
+        Title = 'Apply Sky Theme',
+        Description = 'Applies The Selected Sky Theme',
+    },
+    Interact = 'Changable',
+    Callback = function()
+        local lighting = game:GetService("Lighting")
+        local sky = lighting:FindFirstChildOfClass("Sky")
+
+        if sky then
+            if selectedOption == "Default" then
+                sky.SkyboxUp = "rbxassetid://14147881297"
+                sky.SkyboxRt = "rbxassetid://14147882405"
+                sky.SkyboxLf = "rbxassetid://14147883091"
+                sky.SkyboxFt = "rbxassetid://14147882761"
+                sky.SkyboxDn = "rbxassetid://14147882149"
+                sky.SkyboxBk = "rbxassetid://14147881792"
+            elseif selectedOption == "Rinns Hub Sky" then
+                sky.SkyboxUp = "rbxassetid://18962850396"
+                sky.SkyboxRt = "rbxassetid://18962850396"
+                sky.SkyboxLf = "rbxassetid://18962850396"
+                sky.SkyboxFt = "rbxassetid://18962850396"
+                sky.SkyboxDn = "rbxassetid://18962850396"
+                sky.SkyboxBk = "rbxassetid://18962850396"
+            end
+            print('Sky theme applied: ' .. selectedOption)
+        else
+            print("No Sky object found in Lighting.")
+        end
+    end,
+})
+
 print("Script loaded successfully")
 ArrayField:LoadConfiguration()
