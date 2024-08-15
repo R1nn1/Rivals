@@ -1530,5 +1530,38 @@ MiscTab:CreateButton({
     end,
 })
 
+local camera = game.Workspace.CurrentCamera
+local originalFOV = camera.FieldOfView -- Store the original FOV
+local fovValue = 10 -- Default slider value
+
+local WorldTab = Window:CreateTab("World Tab", 4483362458) -- Title, Image
+
+-- Button to apply the FOV change
+WorldTab:CreateButton({
+    Name = "Apply Fov",
+    Info = {
+        Title = 'Apply Fov',
+        Description = 'Applys the Fov you put in the slider',
+    },
+    Interact = 'SkibidiToilet',
+    Callback = function()
+        camera.FieldOfView = fovValue
+        print("Fov changed to " .. fovValue)
+    end,
+})
+
+-- Slider to adjust the FOV value
+WorldTab:CreateSlider({
+    Name = "Fov Slider",
+    Range = {0, 1000},
+    Increment = 1,
+    Suffix = "Fov",
+    CurrentValue = 65,
+    Flag = "FovSlider",
+    Callback = function(Value)
+        fovValue = Value
+    end,
+})
+
 print("Script loaded successfully")
 ArrayField:LoadConfiguration()
