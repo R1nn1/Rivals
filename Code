@@ -1530,6 +1530,78 @@ MiscTab:CreateButton({
     end,
 })
 
+local ArrayField = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hosvile/Refinement/main/MC%3AArrayfield%20Library"))()
+-- Documentation url: https://docs.sirius.menu/community/arrayfield
+
+local Window = ArrayField:CreateWindow({
+    Name = "Rinns Hub",
+    LoadingTitle = "Rinns Hub",
+    LoadingSubtitle = "Code by Rinn Ui by Sirius Ui remake by Hosvile",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "RinnsHubConfigs", -- Create a custom folder for your hub/game
+        FileName = "RinnsHub"
+    },
+    Discord = {
+        Enabled = true,
+        Invite = "Mt9F5nc8Tg", -- The Discord invite code, do not include discord.gg/
+        RememberJoins = false -- Set this to false to make them join the discord every time they load it up
+    },
+    KeySystem = false, -- Set this to true to use our key system
+    KeySettings = {
+        Title = "ArrayField",
+        Subtitle = "Key System",
+        Note = "Join the discord (discord.gg/sirius)",
+        FileName = "ArrayFieldsKeys",
+        SaveKey = false,
+        GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like ArrayField to get the key from
+        Key = {"Hello",'Bye'},
+        Actions = {
+            [1] = {
+                Text = 'Click here to copy the key link',
+                OnPress = function()
+
+                end,
+            }
+        },
+    }
+})
+
+local GunTab = Window:CreateTab("Gun", 4483362458) -- Title, Image
+
+local cim = require(game:GetService("Players").LocalPlayer.PlayerScripts.Modules.ClientReplicatedClasses.ClientFighter.ClientItem)
+local inputFunc = cim.Input
+local old
+
+local function modifyValues()
+    old = hookfunction(inputFunc, function(...)
+        local args = {...}
+        if type(args[1]) == "table" then
+            -- Modify the values
+            args[1].Info.ShootRecoil = 0
+            args[1].Info.ShootSpread = 0
+            args[1].Info.ProjectileSpeed = 99999999
+            args[1].Info.ShootCooldown = 0
+            args[1].Info.QuickShotCooldown = 0
+        end
+
+        return old(...)
+    end)
+end
+
+local Button = GunTab:CreateButton({
+    Name = "Op Gun",
+    Info = {
+        Title = 'Op Gun',
+        Description = 'Makes All Your Weapons Op',
+    },
+    Interact = 'Changable',
+    Callback = function()
+        modifyValues()
+        print('Modifications Activated')
+    end,
+})
+
 local camera = game.Workspace.CurrentCamera
 local originalFOV = camera.FieldOfView -- Store the original FOV
 local fovValue = 10 -- Default slider value
