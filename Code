@@ -1600,11 +1600,62 @@ WorldTab:CreateSlider({
     end,
 })
 
+local skyThemes = {
+    ["Twilight"] = {
+        SkyboxBk = "rbxassetid://264908339",
+        SkyboxDn = "rbxassetid://264907909",
+        SkyboxFt = "rbxassetid://264909420",
+        SkyboxLf = "rbxassetid://264909758",
+        SkyboxRt = "rbxassetid://264908886",
+        SkyboxUp = "rbxassetid://264907379",
+    },
+    ["Nebula"] = {
+        SkyboxBk = "rbxassetid://159454299",
+        SkyboxDn = "rbxassetid://159454296",
+        SkyboxFt = "rbxassetid://159454293",
+        SkyboxLf = "rbxassetid://159454286",
+        SkyboxRt = "rbxassetid://159454300",
+        SkyboxUp = "rbxassetid://159454288",
+    },
+    ["Vaporwave"] = {
+        SkyboxBk = "rbxassetid://1417494030",
+        SkyboxDn = "rbxassetid://1417494146",
+        SkyboxFt = "rbxassetid://1417494253",
+        SkyboxLf = "rbxassetid://1417494402",
+        SkyboxRt = "rbxassetid://1417494499",
+        SkyboxUp = "rbxassetid://1417494643",
+    },
+    ["Redshift"] = {
+        SkyboxBk = "rbxassetid://401664839",
+        SkyboxDn = "rbxassetid://401664862",
+        SkyboxFt = "rbxassetid://401664960",
+        SkyboxLf = "rbxassetid://401664881",
+        SkyboxRt = "rbxassetid://401664901",
+        SkyboxUp = "rbxassetid://401664936",
+    },
+    ["Blue Stars"] = {
+        SkyboxBk = "rbxassetid://149397684",
+        SkyboxDn = "rbxassetid://149397686",
+        SkyboxFt = "rbxassetid://149397688",
+        SkyboxLf = "rbxassetid://149397692",
+        SkyboxRt = "rbxassetid://149397697",
+        SkyboxUp = "rbxassetid://149397702",
+    },
+    ["Blue Aurora"] = {
+        SkyboxBk = "rbxassetid://12063984",
+        SkyboxDn = "rbxassetid://12064107",
+        SkyboxFt = "rbxassetid://12064152",
+        SkyboxLf = "rbxassetid://12064121",
+        SkyboxRt = "rbxassetid://12064115",
+        SkyboxUp = "rbxassetid://12064131",
+    }
+}
+
 local selectedOption = "Default" -- Default option
 
 WorldTab:CreateDropdown({
     Name = "Sky Theme",
-    Options = {"Default", "Rinns Hub Sky"},
+    Options = {"Default", "Rinns Hub Sky", "Twilight", "Nebula", "Vaporwave", "Redshift", "Blue Stars", "Blue Aurora"},
     CurrentOption = "Default",
     MultiSelection = false,
     Flag = "SkyDrop",
@@ -1640,6 +1691,13 @@ WorldTab:CreateButton({
                 sky.SkyboxFt = "rbxassetid://18962850396"
                 sky.SkyboxDn = "rbxassetid://18962850396"
                 sky.SkyboxBk = "rbxassetid://18962850396"
+            elseif skyThemes[selectedOption] then
+                sky.SkyboxUp = skyThemes[selectedOption].SkyboxUp
+                sky.SkyboxRt = skyThemes[selectedOption].SkyboxRt
+                sky.SkyboxLf = skyThemes[selectedOption].SkyboxLf
+                sky.SkyboxFt = skyThemes[selectedOption].SkyboxFt
+                sky.SkyboxDn = skyThemes[selectedOption].SkyboxDn
+                sky.SkyboxBk = skyThemes[selectedOption].SkyboxBk
             end
             print('Sky theme applied: ' .. selectedOption)
         else
@@ -1647,6 +1705,7 @@ WorldTab:CreateButton({
         end
     end,
 })
+
 
 local weaponSkins = {
     ["Bow"] = {"Compound Bow", "Raven Bow"},
@@ -1738,7 +1797,6 @@ Tab:CreateToggle({
     end,
 })
 
--- Silent Aim Script
 local players = game:GetService("Players")
 local run_service = game:GetService("RunService")
 local replicated_storage = game:GetService("ReplicatedStorage")
